@@ -1,0 +1,45 @@
+[project]
+name = "xarray-model"
+version = "0.0.0"
+description = "Model validation for xarray objects"
+authors = [
+    {name = "Mike Blackett", email = "27811528+mikeblackett@users.noreply.github.com"},
+]
+dependencies = ["xarray>=2025.4.0", "numpy>=2.2.5", "jsonschema>=4.23.0"]
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "MIT"}
+
+[project.optional-dependencies]
+dask = [
+    "dask>=2025.5.0",
+]
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+distribution = true
+
+[tool.ruff]
+line-length = 79
+indent-width = 4
+extend-include = ["*.ipynb"]
+
+[tool.ruff.format]
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+indent-style = "space"
+line-ending = "auto"
+quote-style = "single"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+preview = false
+
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "hypothesis>=6.131.17",
+]

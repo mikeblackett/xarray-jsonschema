@@ -1,7 +1,7 @@
 [project]
 name = "xarray-model"
 version = "0.0.0"
-description = "Model validation for xarray objects"
+description = "A JSON Schema powered validation library for xarray objects"
 authors = [
     {name = "Mike Blackett", email = "27811528+mikeblackett@users.noreply.github.com"},
 ]
@@ -9,11 +9,21 @@ dependencies = ["xarray>=2025.4.0", "numpy>=2.2.5", "jsonschema>=4.23.0"]
 requires-python = ">=3.12"
 readme = "README.md"
 license = {text = "MIT"}
-
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "coverage>=7.8.1",
+    "hypothesis>=6.131.31",
+    "pyright>=1.1.401",
+    "ruff>=0.11.12",
+    "sphinx>=8.2.3",
+    "pydata-sphinx-theme>=0.16.1",
+]
 [project.optional-dependencies]
 dask = [
     "dask>=2025.5.0",
 ]
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
@@ -36,10 +46,3 @@ skip-magic-trailing-comma = false
 
 [tool.ruff.lint]
 preview = false
-
-
-[dependency-groups]
-dev = [
-    "pytest>=8.3.5",
-    "hypothesis>=6.131.17",
-]

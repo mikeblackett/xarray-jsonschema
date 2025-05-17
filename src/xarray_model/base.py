@@ -1,102 +1,92 @@
 import json
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from functools import cached_property
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar
 
-import jsonschema
 
-from xarray_model.types import JSONDataType
+from xarray_model.serializers import Serializer
+from xarray_model.validators import XarrayModelValidator
 
-DIALECT = 'http://json-schema.org/draft-07/schema'
+
+DIALECT = 'https://json-schema.org/draft/2020-12/schema'
 
 
 class ModelError(Exception):
-    """Raised when a model fails validation."""
-
-    ...
+    """Base exception for xarray model errors."""
 
 
-class SerializationError(ModelError):
-    """Raised when serialization fails."""
-
-    ...
+class NotYetImplementedError(ModelError):
+    """Error raised when a planned feature is not yet implemented."""
 
 
-class DeserializationError(ModelError):
-    """Raised when deserialization fails."""
+@dataclass(frozen=True, kw_only=True, repr=False)
+class Base(ABC):
+    """Base class for xarray validations models."""
 
-    ...
-
-
-@dataclass(frozen=True)
-class BaseModel(ABC):
-    """Base class for JSON schema xarray models."""
-
-    # Defaults
     _dialect: ClassVar[str] = DIALECT
-    _type: ClassVar[JSONDataType]
-    _validator = jsonschema.Draft7Validator
-    # Annotations
-    _title: ClassVar[str] = ''
-    _description: ClassVar[str] = ''
-    _default: ClassVar[str] = ''
+    """The version of JSON Schema used by this model."""
+    _validator: ClassVar = XarrayModelValidator
+    """The JSON Schema validator class used by this model."""
 
-    @property
+    title: str | None = None
+    description: str | None = None
+
+    @cached_property
+    @abstractmethod
+    def serializer(self) -> Serializer:
+        """The serializer for this schema."""
+        raise NotImplementedError
+
+    @cached_property
     def schema(self) -> dict[str, Any]:
-        """The JSON schema for this schema."""
-        _schema = {'$schema': self._dialect}
-        if self._title:
-            _schema |= {'title': self._title}
-        if self._description:
-            _schema |= {'description': self._description}
-        if self._default:
-            _schema |= {'default': self._default}
-        return _schema | self.serialize()
+        """The JSON Schema schema for this model."""
+        schema = self.serializer.serialize()
+        self._validator.check_schema(schema=schema)
+        return schema
 
     @cached_property
     def validator(self):
         """The validator for this schema."""
-        return jsonschema.Draft7Validator(schema=self.schema)
+        return self._validator(schema=self.schema)
 
     def _validate(self, instance: Any) -> None:
+        """Validate an instance against this schema.
+
+        Subclasses should normally call this method in their `validate` method.
+        """
         return self.validator.validate(instance=instance)
 
     @abstractmethod
     def validate(self, *args, **kwargs) -> None:
-        """Validate an object against this schema."""
+        """Validate an instance against this schema.
+
+        Subclasses should implement this method and perform any necessary
+        preprocessing of arguments before passing to `_validate`.
+        """
         ...
 
-    @abstractmethod
-    def serialize(self) -> dict[str, Any]:
-        """Return a JSON-serializable representation of the schema constraints."""
-        ...
-
-    @classmethod
-    @abstractmethod
-    def deserialize(cls, data: Mapping[str, Any]) -> Self:
-        """Instantiate this schema from a JSON-serializable representation of schema constraints."""
-        ...
-
-    @classmethod
-    def convert(cls, data: Any) -> Self:
-        """Convert ``data`` to this schema."""
-        if isinstance(data, cls):
-            return data
-        return cls.from_dict(data)
-
-    def to_json_schema(self) -> str:
+    def to_json(self) -> str:
         """Return the schema as a JSON string."""
-        return json.dumps(self.serialize())
+        return json.dumps(self.schema)
 
-    @classmethod
-    def from_json_schema(cls, schema: str) -> Self:
-        """Instantiate this model from a JSON string."""
-        return cls.deserialize(json.loads(schema))
+    # @classmethod
+    # def from_json(cls, schema: str) -> Self:
+    #     """Instantiate this model from a JSON string."""
+    #     # TODO: implement `Base.from_schema`
+    #     return cls.from_schema(**json.loads(schema))
 
-    @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> Self:
-        """Convert a dictionary to this schema."""
-        # Subclasses should normally override this method...
-        return cls(**data)
+    # @classmethod
+    # def from_xarray(cls, *args, **kwargs) -> Self:
+    #     # TODO: implement `Base.from_xarray`
+    #     ...
+
+    def __repr__(self):
+        # Show only non-default arguments...
+        args = [
+            (f.name, getattr(self, f.name))
+            for f in fields(self)
+            if getattr(self, f.name) != f.default
+        ]
+        args_string = ''.join(f'{name}={value}' for name, value in args)
+        return f'{self.__class__.__name__}({args_string})'

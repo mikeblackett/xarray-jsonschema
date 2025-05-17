@@ -1,21 +1,20 @@
-from .components import (
-    AttrsModel,
-    ChunksModel,
-    DTypeModel,
-    DimsModel,
-    NameModel,
-    SizesModel,
-)
+# TODO: (mike) Custom error messages
 
-from .data_array import CoordsModel, DataArrayModel
+from .components import Attr, Attrs, Chunks, DType, Dims, Name, Shape, Size
+from .containers import DataArrayModel, CoordsModel, DataVarsModel
+from ._version import version as __version__
 
 __all__ = [
-    'AttrsModel',
-    'ChunksModel',
+    '__version__',
+    'Attr',
+    'Attrs',
+    'Chunks',
     'CoordsModel',
-    'DTypeModel',
     'DataArrayModel',
-    'DimsModel',
-    'NameModel',
-    'SizesModel',
+    'DataVarsModel',
+    'DType',
+    'Dims',
+    'Name',
+    'Shape',
+    'Size',
 ]

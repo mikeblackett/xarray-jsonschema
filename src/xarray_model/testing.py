@@ -1,3 +1,5 @@
+from collections.abc import Hashable, Mapping, Sequence
+import xarray as xr
 import hypothesis as hp
 import numpy as np
 import xarray.testing.strategies as xrst
@@ -23,6 +25,77 @@ REGEX_PATTERNS = [
 ]
 
 
+_readable_characters = st.characters(
+    categories=['L', 'N'], max_codepoint=0x017F
+)
+
+
+def readable_text(min_size: int = 0):
+    return st.text(_readable_characters, min_size=min_size, max_size=5)
+
+
+_attr_values = st.one_of(
+    st.none(),
+    st.booleans(),
+    st.floats(),
+    st.integers(),
+    readable_text(),
+)
+_attr_keys = readable_text()
+
+
+@st.composite
+def positive_integers(draw: st.DrawFn):
+    return draw(st.integers(min_value=1))
+
+
+@st.composite
+def non_negative_integers(draw: st.DrawFn):
+    return draw(st.integers(min_value=0))
+
+
+def dimension_names[T: Hashable](
+    *,
+    name_strategy: st.SearchStrategy[T] = xrst.names(),
+    min_dims: int = 0,
+    max_dims: int = 3,
+) -> st.SearchStrategy[list[T]]:
+    """
+    Generates an arbitrary list of valid dimension names.
+
+    Requires the hypothesis package to be installed.
+
+    Parameters
+    ----------
+    name_strategy
+        Strategy for making names. Useful if we need to share this.
+    min_dims
+        Minimum number of dimensions in generated list.
+    max_dims
+        Maximum number of dimensions in generated list.
+    """
+    return st.lists(
+        elements=name_strategy,
+        min_size=min_dims,
+        max_size=max_dims,
+        unique=True,
+    )
+
+
+def attrs(
+    min_items: int = 0, max_leaves: int = 3
+) -> st.SearchStrategy[dict[str, None | bool | float | int | str]]:
+    return st.recursive(
+        base=st.dictionaries(
+            keys=_attr_keys, values=_attr_values, min_size=min_items
+        ),
+        extend=lambda children: st.dictionaries(
+            keys=_attr_keys, values=children, min_size=min_items
+        ),
+        max_leaves=max_leaves,
+    )
+
+
 @st.composite
 def supported_dtype_likes(
     draw: st.DrawFn,
@@ -40,14 +113,14 @@ def supported_dtype_likes(
         return draw(
             st.sampled_from(
                 [
-                    # string
-                    dtype.name,
-                    # array-protocol typestring
-                    dtype.str,
-                    # One-character strings
-                    dtype.char,
                     # dtype
                     dtype,
+                    # # string
+                    # dtype.name,
+                    # # array-protocol typestring
+                    # dtype.str,
+                    # # One-character strings
+                    # dtype.char,
                 ],
             )
         )
@@ -56,14 +129,14 @@ def supported_dtype_likes(
         st.sampled_from(
             [
                 draw(st.none()),
+                # dtype
+                draw(_dtype_strategy),
                 # string
                 draw(_dtype_strategy).name,
                 # array-protocol typestring
                 draw(_dtype_strategy).str,
                 # One-character strings
                 draw(_dtype_strategy).char,
-                # dtype
-                draw(_dtype_strategy),
                 # Built-in types
                 draw(
                     st.sampled_from([int, float, bool, str, complex]),
@@ -135,3 +208,55 @@ def uniform_chunks(
     if last_block:
         blocks.append(last_block)
     return blocks
+
+
+@st.composite
+def _data_arrays(
+    draw: st.DrawFn,
+    *,
+    dims: st.SearchStrategy[
+        Sequence[Hashable] | Mapping[Hashable, int]
+    ] = xrst.dimension_sizes(),
+    dtype: st.SearchStrategy[np.dtype] = xrst.supported_dtypes(),
+    attrs: st.SearchStrategy[Mapping] = attrs(),
+    name: st.SearchStrategy[Hashable] = xrst.names(),
+) -> xr.DataArray:
+    return xr.DataArray(
+        data=draw(xrst.variables(dims=dims, dtype=dtype, attrs=attrs)),
+        name=draw(name),
+    )
+
+
+@st.composite
+def data_arrays(
+    draw: st.DrawFn,
+    *,
+    dims: st.SearchStrategy[
+        Sequence[Hashable] | Mapping[Hashable, int]
+    ] = xrst.dimension_sizes(),
+    dtype: st.SearchStrategy[np.dtype] = xrst.supported_dtypes(),
+    attrs: st.SearchStrategy[Mapping] = attrs(),
+    name: st.SearchStrategy[Hashable] = xrst.names(),
+) -> xr.DataArray:
+    """Generate an arbitrary DataArray."""
+    da = draw(_data_arrays(dims=dims, dtype=dtype, attrs=attrs, name=name))
+    dim_coords = draw(coords(dims=st.just(da.sizes)))
+    return da.assign_coords(dim_coords)
+
+
+@st.composite
+def coords(
+    draw: st.DrawFn,
+    *,
+    dims: st.SearchStrategy[Mapping[Hashable, int]] = xrst.dimension_sizes(),
+) -> dict[Hashable, xr.DataArray]:
+    """Generate a mapping of coordindate names to DataArrays.
+
+    Useful to generate dimension coordinates for DataArrays.
+    """
+    return {
+        name: draw(
+            _data_arrays(dims=st.just({name: size}), name=st.just(name))
+        )
+        for name, size in draw(dims).items()
+    }

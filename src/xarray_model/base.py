@@ -21,50 +21,22 @@ class NotYetImplementedError(ModelError):
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class Base(ABC):
-    """Base class for xarray validations models."""
+class BaseSchema(ABC):
+    """Base class for xarray validation schema."""
 
     _dialect: ClassVar[str] = DIALECT
     """The version of JSON Schema used by this model."""
-    _validator: ClassVar = XarrayModelValidator
-    """The JSON Schema validator class used by this model."""
-
-    title: str | None = None
-    description: str | None = None
 
     @cached_property
     @abstractmethod
     def serializer(self) -> Serializer:
         """The serializer for this schema."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @cached_property
     def schema(self) -> dict[str, Any]:
         """The JSON Schema schema for this model."""
-        schema = self.serializer.serialize()
-        self._validator.check_schema(schema=schema)
-        return schema
-
-    @cached_property
-    def validator(self):
-        """The validator for this schema."""
-        return self._validator(schema=self.schema)
-
-    def _validate(self, instance: Any) -> None:
-        """Validate an instance against this schema.
-
-        Subclasses should normally call this method in their `validate` method.
-        """
-        return self.validator.validate(instance=instance)
-
-    @abstractmethod
-    def validate(self, *args, **kwargs) -> None:
-        """Validate an instance against this schema.
-
-        Subclasses should implement this method and perform any necessary
-        preprocessing of arguments before passing to `_validate`.
-        """
-        ...
+        return self.serializer.serialize()
 
     def to_json(self) -> str:
         """Return the schema as a JSON string."""
@@ -90,3 +62,40 @@ class Base(ABC):
         ]
         args_string = ''.join(f'{name}={value}' for name, value in args)
         return f'{self.__class__.__name__}({args_string})'
+
+
+@dataclass(frozen=True, kw_only=True, repr=False)
+class BaseModel(BaseSchema):
+    """Base class for xarray validation models."""
+
+    title: str | None = None
+    description: str | None = None
+
+    _validator: ClassVar = XarrayModelValidator
+    """The JSON Schema validator class used by this model."""
+
+    @cached_property
+    def validator(self):
+        """The validator for this schema."""
+
+        return self._validator(schema=self.schema)
+
+    def check_schema(self):
+        """Validate this model's schema against the validator meta-schema."""
+        self._validator.check_schema(schema=self.schema)
+
+    def _validate(self, instance: Any) -> None:
+        """Validate an instance against this schema.
+
+        Subclasses should normally call this method in their `validate` method.
+        """
+        return self.validator.validate(instance=instance)
+
+    @abstractmethod
+    def validate(self, *args, **kwargs) -> None:
+        """Validate an instance against this schema.
+
+        Subclasses should implement this method and perform any necessary
+        preprocessing of arguments before passing to `_validate`.
+        """
+        raise NotImplementedError  # pragma: no cover

@@ -1,6 +1,6 @@
 from typing_extensions import assert_never
 import warnings
-from collections.abc import Hashable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Any, Iterable
@@ -8,7 +8,7 @@ from typing import Any, Iterable
 import numpy as np
 from numpy.typing import DTypeLike
 
-from xarray_model.base import Base
+from xarray_model.base import BaseSchema
 from xarray_model.encoders import encode_value
 from xarray_model.serializers import (
     AnySerializer,
@@ -36,9 +36,8 @@ __all__ = [
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class _Chunk(Base):
-    """
-    DataArray chunk model
+class _Chunk(BaseSchema):
+    """A JSON Schema generator for chunk sizes.
 
     This model represents the tuple of block sizes for a single dimension, it
     is supposed to be used inside the Chunks schema.
@@ -91,16 +90,10 @@ class _Chunk(Base):
                     'Expected int or sequence of ints.'
                 )
 
-    def validate(self, _) -> None:
-        raise NotImplementedError(
-            'Chunk is not meant to be validated in isolation. '
-            'You should compose it inside the Chunks schema.'
-        )
 
-
-@dataclass(frozen=True, kw_only=True, repr=False)
-class Chunks(Base):
-    """A validation model for DataArray chunks.
+@dataclass(frozen=True, kw_only=False, repr=False)
+class Chunks(BaseSchema):
+    """A JSON Schema generator for DataArray.chunks
 
     Attributes
     ----------
@@ -111,36 +104,9 @@ class Chunks(Base):
         - A sequence of positive integers validates that each dimension has the specified uniform chunk size;
         - A sequence of sequences of positive integers validates exact chunk sizes along each dimension.
         - A value of ``-1`` can be used in place of a positive integer to validate no chunking along a dimension.
-
-    Examples
-    --------
-    # Boolean matching
-    >>> da = xr.DataArray(np.random.rand(5, 4), dims=['x', 'y'])
-    >>> xm.Chunks(False).validate(da.chunks)
-
-    >>> da = da.chunk('auto')
-    >>> xm.Chunks(True).validate(da.chunks)
-
-    # Integer matching (all dimensions have the same chunk size)
-    >>> da = da.chunk(2)
-    >>> xm.Chunks(2).validate(da.chunks)
-    >>> xm.Chunks((2, 2)).validate(da.chunks)
-    >>> xm.Chunks(((2, 2, 1), (2, 2))).validate(da.chunks) # Exact chunk sizes
-
-    # Integer matching
-    >>> da = da.chunk(x=3, y=2)
-    >>> xm.Chunks((3, 2)).validate(da.chunks)
-    >>> xm.Chunks(((3, 2), (2, 2))).validate(da.chunks) # Exact chunk sizes
-
-    # Integer matching with wildcard
-    >>> da = da.chunk(x=-1, y=2)
-    >>> xm.Chunks((-1, 2)).validate(da.chunks)
-    >>> xm.Chunks((-1, (2, 2))).validate(da.chunks)
     """
 
-    chunks: bool | int | Sequence[int | Sequence[int]] = field(
-        default=True, kw_only=False
-    )
+    chunks: bool | int | Sequence[int | Sequence[int]] = field(default=True)
 
     @cached_property
     def serializer(self) -> Serializer:
@@ -169,15 +135,12 @@ class Chunks(Base):
                     items=False,
                 )
             case _:  # pragma: no cover
-                assert_never(self.chunks)
-
-    def validate(self, chunks: tuple[tuple[int, ...], ...] | None) -> None:
-        return super()._validate(instance=chunks)
+                assert_never(self.chunks)  # type: ignore
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class Size(Base):
-    """A validation model for DataArray dimension size.
+class Size(BaseSchema):
+    """A JSON Schema generator for dimension sizes.
 
     This model should be composed with the Shape model.
 
@@ -213,23 +176,20 @@ class Size(Base):
             case _:  # pragma: no cover
                 assert_never(self.size)
 
-    def validate(self, size: int) -> None:
-        return super()._validate(instance=size)
-
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class Shape(Base):
-    """A validation model for DataArray shape.
+class Shape(BaseSchema):
+    """A JSON Schema generator for DataArray.shape
 
     Attributes
     ----------
     shape : Sequence[int | Size] | None, default None
         Sequence of expected sizes for the dimensions of the array. The
         default value of ``None`` will match any shape.
-    min_items : int | None, default None
-        Minimum length of the shape sequence i.e., the number of dimensions.
-    max_items : int | None, default None
-        Maximum length of the shape sequence i.e., the number of dimensions.
+    min_dims : int | None, default None
+        Minimum expected number of dimensions i.e., the minimum sequence length.
+    max_dims : int | None, default None
+        Maximum expected number of dimensions i.e., the maximum sequence length.
 
     Examples
     --------
@@ -242,13 +202,13 @@ class Shape(Base):
     """
 
     shape: Sequence[int | Size] | None = field(default=None, kw_only=False)
-    min_items: int | None = None
-    max_items: int | None = None
+    min_dims: int | None = None
+    max_dims: int | None = None
 
     @cached_property
     def serializer(self) -> Serializer:
         prefix_items = None
-        min_items = self.min_items
+        min_dims = self.min_dims
 
         match self.shape:
             case None:
@@ -261,24 +221,21 @@ class Shape(Base):
                     else Size(size).serializer
                     for size in self.shape
                 ]
-                min_items = len(prefix_items)
+                min_dims = len(prefix_items)
             case _:  # pragma: no cover
                 assert_never(self.shape)
 
         return ArraySerializer(
             prefix_items=prefix_items,
             items=items,
-            min_items=min_items,
-            max_items=self.max_items,
+            min_items=min_dims,
+            max_items=self.max_dims,
         )
-
-    def validate(self, shape: tuple[int, ...]) -> None:
-        return super()._validate(instance=(list(shape)))
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class DType(Base):
-    """A validation model for DataArray dtype.
+class DType(BaseSchema):
+    """A JSON Schema generator for DataArray.dtype.
 
     Attributes
     ----------
@@ -286,15 +243,6 @@ class DType(Base):
         The expected data type of the array. This can be any dtype-like value
         accepted by `numpy.dtype`. The default value of ``None`` will match
         any dtype.
-
-    Examples
-    --------
-    >>> da = xr.DataArray(np.ones((5,))).astype('int16')
-
-    >>> xm.DType('int16').validate(da.dtype)
-    >>> xm.DType(np.int16).validate(da.dtype)
-    >>> xm.DType(np.dtype('int16')).validate(da.dtype)
-    >>> xm.DType('<i2').validate(da.dtype)
     """
 
     # TODO: (mike) support numpy subdytpes
@@ -306,14 +254,10 @@ class DType(Base):
             return StringSerializer()
         return ConstSerializer(np.dtype(self.dtype))
 
-    def validate(self, dtype: np.dtype) -> None:
-        return super()._validate(instance=encode_value(dtype))
-
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class Name(Base):
-    """Validation model for DataArray name.
-
+class Name(BaseSchema):
+    """A JSON Schema for validator DataArray.name.
     Attributes
     ----------
     name : str | Sequence[str] | None, default None
@@ -367,13 +311,10 @@ class Name(Base):
             case _:  # pragma: no cover
                 assert_never(self.name)
 
-    def validate(self, name: Hashable | None) -> None:
-        return super()._validate(instance=name)
-
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class Dims(Base):
-    """Validation model for DataArray dimensions.
+class Dims(BaseSchema):
+    """A JSON Schema generator for DataArray.dims.
 
     Attributes
     ----------
@@ -392,15 +333,6 @@ class Dims(Base):
     See Also
     --------
     Name : DataArray name validation model
-
-    Examples
-    --------
-    >>> da = xr.DataArray(np.random.rand(5, 4), dims=['foo', 'bar'])
-
-    >>> xm.Dims(['foo', 'bar']).validate(da.dims)
-    >>> xm.Dims([Name('^[a-z]+$', regex=True), 'bar']).validate(da.dims)
-    >>> xm.Dims(constains='foo').validate(da.dims)
-    >>> xm.Dims(max_size=2).validate(da.dims)
     """
 
     dims: Sequence[str | Name] | None = field(kw_only=False, default=None)
@@ -439,13 +371,10 @@ class Dims(Base):
             min_items=min_items,
         )
 
-    def validate(self, dims: tuple[Hashable, ...]) -> None:
-        return super()._validate(instance=encode_value(dims))
-
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class Attr(Base):
-    """Validation model for DataArray metadata attribute key-value pair.
+class Attr(BaseSchema):
+    """A JSON Schema generator for xarray metadata key-value pairs.
 
     Attributes
     ----------
@@ -497,16 +426,10 @@ class Attr(Base):
             case _:
                 return ConstSerializer(encode_value(self.value))
 
-    def validate(self, _) -> None:
-        raise NotImplementedError(
-            'Attr is not meant to be validated in isolation. '
-            'You should compose it inside the Attrs schema.'
-        )
-
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class Attrs(Base):
-    """Validation model for DataArray metadata attributes.
+class Attrs(BaseSchema):
+    """A JSON Schema generator for xarray attrs.
 
     Attributes
     ----------
@@ -517,16 +440,6 @@ class Attrs(Base):
         A flag indicating whether items not described by the ``attrs`` parameter
         are allowed/disallowed. The default value of ``None`` is equivalent to
         ``True``.
-
-    Examples
-    --------
-    >>> da = xr.DataArray(np.random.rand(5), attrs={'foo': 'bar', 'baz': 42})
-
-    >>> xm.Attrs([Attr(key='foo')]).validate(da.attrs)
-    >>> xm.Attrs([Attr(key='qux', required=False)]).validate(da.attrs)
-    >>> xm.Attrs([Attr(key='baz', value=42)]).validate(da.attrs)
-    >>> xm.Attrs([Attr(key='baz', value=int)]).validate(da.attrs)
-    >>> xm.Attrs([Attr(key='foo'), Attr(key='baz')], allow_extra_items=False).validate(da.attrs)
     """
 
     attrs: Iterable[Attr] | None = field(default=None, kw_only=False)
@@ -554,9 +467,4 @@ class Attrs(Base):
             pattern_properties=pattern_properties or None,
             required=required or None,
             additional_properties=self.allow_extra_items,
-        )
-
-    def validate(self, attrs: Mapping[str, Any]) -> None:
-        return super()._validate(
-            {k: encode_value(v) for k, v in attrs.items()}
         )

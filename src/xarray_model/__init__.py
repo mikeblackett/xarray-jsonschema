@@ -1,8 +1,8 @@
 # TODO: (mike) Custom error messages
 
-from .components import Attr, Attrs, Chunks, DType, Dims, Name, Shape, Size
-from .containers import DataArrayModel, Coords, DataVars
 from ._version import version as __version__
+from .components import Attr, Attrs, Chunks, Dims, DType, Name, Shape, Size
+from .containers import Coords, DataArrayModel, DatasetModel, DataVars
 
 __all__ = [
     '__version__',
@@ -11,6 +11,7 @@ __all__ = [
     'Chunks',
     'Coords',
     'DataArrayModel',
+    'DatasetModel',
     'DataVars',
     'DType',
     'Dims',

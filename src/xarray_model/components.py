@@ -37,7 +37,7 @@ __all__ = [
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class _Chunk(BaseSchema):
-    """A JSON Schema generator for chunk sizes.
+    """A JSON Schema generator for :py:attr:`xarray.DataArray.chunks` block sizes.
 
     This model represents the tuple of block sizes for a single dimension, it
     is supposed to be used inside the Chunks schema.
@@ -93,16 +93,17 @@ class _Chunk(BaseSchema):
 
 @dataclass(frozen=True, kw_only=False, repr=False)
 class Chunks(BaseSchema):
-    """A JSON Schema generator for DataArray.chunks
+    """A JSON Schema generator for :py:attr:`xarray.DataArray.chunks`.
 
     Attributes
     ----------
     chunks : bool | int | Sequence[int | Sequence[int]], default True
-        The expected chunk sizes along each dimension. The validation logic depends on the argument type:
-        - A boolean simply validates whether the array is chunked or not;
-        - An positive integer validates that **all** dimensions have the same uniform chunk size (all but the last chunk are equal to ``chunks``);
-        - A sequence of positive integers validates that each dimension has the specified uniform chunk size;
-        - A sequence of sequences of positive integers validates exact chunk sizes along each dimension.
+        The expected chunking along each dimension. The schema logic depends on the argument :py:type:`type`:
+
+        - :py:type:`bool` simply validates whether the array is chunked or not;
+        - :py:type:`int` validates a **uniform** chunk size along **all** dimensions;
+        - :py:type:`Sequence[int]` validates a **uniform** chunk size along **each** dimension;
+        - :py:type:`Sequence[Sequence[int]]` validates an exact chunk size along each dimension.
         - A value of ``-1`` can be used in place of a positive integer to validate no chunking along a dimension.
     """
 
@@ -142,7 +143,7 @@ class Chunks(BaseSchema):
 class Size(BaseSchema):
     """A JSON Schema generator for dimension sizes.
 
-    This model should be composed with the Shape model.
+    This model should be composed with the :py:attr:`~xarray_model.Shape` model.
 
     Attributes
     ----------
@@ -179,7 +180,7 @@ class Size(BaseSchema):
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class Shape(BaseSchema):
-    """A JSON Schema generator for DataArray.shape
+    """A JSON Schema generator for :py:attr:`xarray.DataArray.shape`.
 
     Attributes
     ----------
@@ -190,15 +191,6 @@ class Shape(BaseSchema):
         Minimum expected number of dimensions i.e., the minimum sequence length.
     max_dims : int | None, default None
         Maximum expected number of dimensions i.e., the maximum sequence length.
-
-    Examples
-    --------
-    >>> da = xr.DataArray(np.random.rand(5, 4), dims=['x', 'y'])
-
-    >>> xm.Shape([5, 4]).validate(da.shape)
-    >>> xm.Shape(min_items=1, max_items=2).validate(da.shape)
-    >>> xm.Shape([xm.Size(5), xm.Size(4)]).validate(da.shape)
-    >>> xm.Shape([xm.Size(maximum=5), xm.Size(multiple_of=2)]).validate(da.shape)
     """
 
     shape: Sequence[int | Size] | None = field(default=None, kw_only=False)
@@ -235,7 +227,7 @@ class Shape(BaseSchema):
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class DType(BaseSchema):
-    """A JSON Schema generator for DataArray.dtype.
+    """A JSON Schema generator for :py:attr:`xarray.DataArray.dtype`.
 
     Attributes
     ----------
@@ -257,7 +249,8 @@ class DType(BaseSchema):
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class Name(BaseSchema):
-    """A JSON Schema for validator DataArray.name.
+    """A JSON Schema for validator :py:attr:`xarray.DataArray.name`.
+
     Attributes
     ----------
     name : str | Sequence[str] | None, default None
@@ -271,18 +264,6 @@ class Name(BaseSchema):
         Non-negative integer specifying the minimum length of the name.
     max_length : int, default None
         Non-negative integer specifying the maximum length of the name.
-
-    Examples
-    --------
-    >>> da = xarray.DataArray(np.arange(5), dims=['x'], name='foo')
-    # Validate an exact match
-    >>> Name('foo').validate(da.name)
-    # Validate a regex pattern
-    >>> Name(r'^fo{2}$', regex=True).validate(da.name)
-    # Validate a sequence of acceptable values
-    >>> Name(['foo', 'bar']).validate(da.name)
-    # Length constraints
-    >>> Name(min_length=3).validate(da.name)
     """
 
     name: str | Sequence[str] | None = field(default=None, kw_only=False)
@@ -314,7 +295,7 @@ class Name(BaseSchema):
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class Dims(BaseSchema):
-    """A JSON Schema generator for DataArray.dims.
+    """A JSON Schema generator for :py:attr:`xarray.DataArray.dims`.
 
     Attributes
     ----------
@@ -332,7 +313,8 @@ class Dims(BaseSchema):
 
     See Also
     --------
-    Name : DataArray name validation model
+    Name : A JSON Schema generator for :py:attr:`xarray.DataArray.name`.
+    Shape : A JSON Schema generator for:py:attr:`xarray.DataArray.shape`.
     """
 
     dims: Sequence[str | Name] | None = field(kw_only=False, default=None)
@@ -374,7 +356,7 @@ class Dims(BaseSchema):
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class Attr(BaseSchema):
-    """A JSON Schema generator for xarray metadata key-value pairs.
+    """A JSON Schema generator for :py:attr:`xarray.DataArray.attrs` key-value pairs.
 
     Attributes
     ----------
@@ -386,15 +368,15 @@ class Attr(BaseSchema):
          for exact matching, or a Python type for more generic matching. The
          default value of ``None`` will match any value.
     regex : bool, default False
-        A flag to indicate that the ``name`` parameter should be treated as a
+        A boolean flag to indicate that the ``name`` parameter should be treated as a
         regex pattern.
     required: bool, default True
-        A flag to indicate that the attribute is required. This attribute is
+        A boolean flag to indicate that the attribute is required. This attribute is
         silently ignored if the regex flag is set to ``True``.
 
     See Also
     --------
-    Attrs : DataArray metadata attribute validation model
+    Attrs : A JSON Schema generator for :py:attr:`xarray.DataArray.attrs`.
     """
 
     key: str = field(kw_only=False)
@@ -429,7 +411,7 @@ class Attr(BaseSchema):
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class Attrs(BaseSchema):
-    """A JSON Schema generator for xarray attrs.
+    """A JSON Schema generator for :py:attr:`xarray.DataArray.attrs`.
 
     Attributes
     ----------
@@ -437,9 +419,13 @@ class Attrs(BaseSchema):
         An iterable of ``Attr`` models describing the expected metadata key-value
         pairs.
     allow_extra_items : bool | None, default None
-        A flag indicating whether items not described by the ``attrs`` parameter
+        A boolean flag indicating whether items not described by the ``attrs`` parameter
         are allowed/disallowed. The default value of ``None`` is equivalent to
         ``True``.
+
+    See Also
+    --------
+    Attr : A JSON Schema generator for :py:attr:`xarray.DataArray.attr`. key-value pairs.
     """
 
     attrs: Iterable[Attr] | None = field(default=None, kw_only=False)

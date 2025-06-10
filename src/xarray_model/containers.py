@@ -22,30 +22,31 @@ from xarray_model.serializers import (
 
 @dataclass(frozen=True, repr=False, kw_only=True)
 class DataArrayModel(BaseModel):
-    """A JSON Schema xarray DataArray validator.
+    """A JSON Schema validator for :py:class:`xarray.DataArray`.
 
     Attributes
     ----------
     attrs : Attrs | None, default None
-        An Attrs object specifying the attributes of the DataArray. The
-        default value of ``None`` will skip validation of this property.
+        An :py:class:`~xarray_model.Attrs` object specifying the attributes of
+        the DataArray. The default value of ``None`` will skip validation of
+        this property.
     chunks : Chunks | None, default None
-        A Chunks object specifying the chunk sizes of the DataArray dimensions.
+        A :py:class:`~xarray_model.Chunks` object specifying the chunk sizes of the DataArray dimensions.
         The default value of ``None`` will skip validation of this property.
-    coords : CoordsModel | None, default None
-        A CoordsModel object specifying the coordinates of the DataArray.
+    coords : Coords | None, default None
+        A :py:class:`~xarray_model.Coords` object specifying the coordinates of the DataArray.
         The default value of ``None`` will skip validation of this property.
     dims : Dims | None, default None
-        A Dims object specifying the dimensions of the DataArray. The default
+        A :py:class:`~xarray_model.Dims` object specifying the dimensions of the DataArray. The default
         value of ``None`` will skip validation of this property.
     dtype : DType | None, default None
-        A DType object specifying the data type of the DataArray. The default
+        A :py:class:`~xarray_model.DType` object specifying the data type of the DataArray. The default
         value of ``None`` will skip validation of this property.
     name : Name | None, default None
-        A Name object specifying the name of the DataArray. The default value
+        A :py:class:`~xarray_model.Name` object specifying the name of the DataArray. The default value
         of ``None`` will skip validation of this property.
     shape : Shape | None, default None
-        A Shape object specifying the shape of the DataArray. The default
+        A :py:class:`~xarray_model.Name` object specifying the shape of the DataArray. The default
         value of ``None`` will skip validation of this property.
     """
 
@@ -85,19 +86,21 @@ class DataArrayModel(BaseModel):
 
 @dataclass(frozen=True, repr=False, kw_only=True)
 class Coords(BaseSchema):
-    """A JSON Schema generator for xarray Coordinates.
+    """A JSON Schema generator for :py:attr:`xarray.DataArray.coords` and
+    :py:class:`xarray.Dataset.coords`.
 
     Attributes
     ----------
     coords : Mapping[str, DataArrayModel] | None, default None
-        A mapping where keys are coordinate names and values are DataArrayModel
-        objects specifying the properties of a specific coordinate. The
-        default value of ``None`` will skip validation of this property.
+        A mapping where keys are coordinate names and values are
+        :py:class:`~xarray_model.DataArrayModel` objects specifying the
+        properties of a specific coordinate. The default value of ``None``
+        will skip validation of this property.
     require_all : bool, default True
-        A flag indicating if all the coordinates specified in the
+        A boolean flag indicating if all the coordinates specified in the
         ``coords`` parameter are required or not.
     allow_extra : bool, default True
-        A flag indicating if coordinates not specified in the ``coords``
+        A boolean flag indicating if coordinates not specified in the ``coords``
         parameter are allowed or not.
     """
 
@@ -124,19 +127,20 @@ class Coords(BaseSchema):
 
 @dataclass(frozen=True, repr=False, kw_only=True)
 class DataVars(BaseSchema):
-    """A JSON Schema generator for xarray DataVariables.
+    """A JSON Schema generator for :py:attr:`xarray.Dataset.data_vars`.
 
     Attributes
     ----------
     data_vars : Mapping[str, 'DataArrayModel'] | None, default None
-        A mapping where keys are variable names and values are DataArrayModel
-        objects specifying the properties of a specific variable. The default
-        value of ``None`` will skip validation of this property.
+        A mapping where keys are variable names and values are
+        :py:class:`~xarray_model.DataArrayModel` objects specifying the
+        properties of a specific variable. The default value of ``None`` will
+        skip validation of this property.
     require_all_keys : bool, default True
-        A flag indicating if all the data variables specified in the
+        A boolean flag indicating if all the data variables specified in the
         ``data_vars`` parameter are required or not.
     allow_extra_keys : bool, default True
-        A flag indicating if data variables not specified in the ``data_vars``
+        A boolean flag indicating if data variables not specified in the ``data_vars``
         parameter are allowed or not.
     """
 
@@ -159,19 +163,20 @@ class DataVars(BaseSchema):
 
 @dataclass(frozen=True, repr=False, kw_only=True)
 class DatasetModel(BaseModel):
-    """A JSON Schema xarray Dataset validator.
+    """A JSON Schema validator for :py:class:`xarray.Dataset`.
 
     Attributes
     ----------
     attrs : Attrs | None, default None
-        An Attrs object specifying the attributes of the DataArray. The
-        default value of ``None`` will allow any attributes.
-    coords : CoordsModel | None, default None
-        A CoordsModel object specifying the coordinates of the DataArray. The
-        default value of ``None`` will allow any coordinates.
-    data_vars : DataVarsModel | None, default None
-        A DataVarsModel object specifying the data variables of the DataArray.
-        The default value of ``None`` will allow any data variables.
+        An :py:class:`~xarray_model.Attrs` object specifying the attributes of
+        the DataArray. The default value of ``None`` will allow any attributes.
+    coords : Coords | None, default None
+        A :py:class:`~xarray_model.Coords` object specifying the coordinates of
+        the DataArray. The default value of ``None`` will allow any coordinates.
+    data_vars : DataVars | None, default None
+        A :py:class:`~xarray_model.DataVars` object specifying the data
+        variables of the DataArray. The default value of ``None`` will allow
+        any data variables.
     """
 
     coords: Coords | None = None

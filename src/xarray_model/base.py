@@ -22,7 +22,7 @@ class NotYetImplementedError(ModelError):
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class BaseSchema(ABC):
-    """Base class for xarray validation schema."""
+    """Base class for xarray model schema."""
 
     _dialect: ClassVar[str] = DIALECT
     """The version of JSON Schema used by this model."""
@@ -30,12 +30,12 @@ class BaseSchema(ABC):
     @cached_property
     @abstractmethod
     def serializer(self) -> Serializer:
-        """The serializer for this schema."""
+        """The ``Serializer`` object for this schema."""
         raise NotImplementedError  # pragma: no cover
 
     @cached_property
     def schema(self) -> dict[str, Any]:
-        """The JSON Schema schema for this model."""
+        """The ``JSON Schema`` schema for this model."""
         return self.serializer.serialize()
 
     def to_json(self) -> str:

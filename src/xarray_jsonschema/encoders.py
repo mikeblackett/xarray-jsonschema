@@ -1,3 +1,4 @@
+from enum import EnumType
 from functools import singledispatch
 import re
 from collections.abc import Mapping, Sequence
@@ -37,8 +38,27 @@ DECODE_KEYWORDS = {
 
 def encode_keyword(keyword: str):
     """Encode a Python-formatted keyword to JSON Schema."""
+    if isinstance(keyword, re.Pattern):
+        keyword = encode_value(keyword)
     result = _snake_case_to_camel_case(keyword)
     return ENCODE_KEYWORDS.get(result, result)
+
+
+# @singledispatch
+# def encode_keyword(keyword: Hashable):
+#     """Encode a Python-formatted keyword to JSON Schema."""
+#     return str(keyword)
+#
+#
+# @encode_keyword.register
+# def _(value: str) -> str:
+#     value = _snake_case_to_camel_case(value)
+#     return ENCODE_KEYWORDS.get(value, value)
+#
+#
+# @encode_keyword.register
+# def _(value: re.Pattern) -> str:
+#     return value.pattern
 
 
 @singledispatch
@@ -81,6 +101,11 @@ def _(value: np.ndarray) -> list:
     return value.tolist()
 
 
+@encode_value.register
+def _(value: EnumType) -> list:
+    return [member.value for member in value.__members__.values()]
+
+
 def _encode_type(type_: Type) -> str:
     if issubclass(type_, str):
         return 'string'
@@ -110,8 +135,8 @@ def _snake_case_to_camel_case(string: str) -> str:
     return string[0].lower() + string[1:]
 
 
-def _camel_case_to_snake_case(string: str) -> str:
-    return re.sub(r'(?<!^)(?=[A-Z])', '_', string).lower()
+# def _camel_case_to_snake_case(string: str) -> str:
+#     return re.sub(r'(?<!^)(?=[A-Z])', '_', string).lower()
 
 
 # def decode_type(type_: str) -> Type:

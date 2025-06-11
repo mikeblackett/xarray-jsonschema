@@ -1,4 +1,5 @@
 from collections.abc import Hashable, Mapping, Sequence
+import re
 import xarray as xr
 import hypothesis as hp
 import numpy as np
@@ -147,8 +148,9 @@ def supported_dtype_likes(
 
 
 @st.composite
-def patterns(draw: st.DrawFn) -> str:
-    return draw(st.sampled_from(REGEX_PATTERNS))
+def patterns(draw: st.DrawFn) -> re.Pattern:
+    """Generate regular expression patterns."""
+    return re.compile(draw(st.sampled_from(REGEX_PATTERNS)))
 
 
 @st.composite

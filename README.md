@@ -1,4 +1,4 @@
-# xarray-model
+# xarray-jsonschema
 
 A JSON Schema validation library for xarray objects. 
 

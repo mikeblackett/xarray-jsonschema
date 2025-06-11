@@ -2,9 +2,10 @@ from abc import ABC
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, fields
 from re import Pattern
+import re
 from typing import Any, Type
 
-from xarray_model.encoders import (
+from xarray_jsonschema.encoders import (
     encode_value,
     encode_keyword,
 )
@@ -75,10 +76,7 @@ class Serializer(ABC):
     comment: str | None = None
 
     def serialize(self) -> dict[str, Any]:
-        """Convert this serializer to a JSON schema.
-
-        This is a convenience method that wraps `as_schema`.
-        """
+        """Convert this serializer to a JSON schema"""
         return as_schema(self)
 
     # @classmethod
@@ -92,6 +90,14 @@ class Serializer(ABC):
     #         if f.init
     #     }
     #     return cls(**kwargs)
+
+    def __or__(self, other) -> 'Serializer':
+        if not isinstance(other, type(self)):
+            raise TypeError(
+                'Serializer objects are only unionable with their own type;'
+                f' expected {type(self).__name__}, got {type(other).__name__}.'
+            )
+        return self.__class__(**_get_kwargs(self) | _get_kwargs(other))  # type: ignore
 
     def __repr__(self):
         # repr signature with only non-default arguments
@@ -127,7 +133,7 @@ class ObjectSerializer(Serializer):
     properties : Mapping[str, Serializer] | None, default None
         A mapping where each key is the name of a property and each value is a
         `Serializer` used to validate that property.
-    pattern_properties : Mapping[str, Serializer] | None, default None
+    pattern_properties : Mapping[str | re.Pattern, Serializer] | None, default None
         A mapping where each key is a regular expression used to match the name
         of a property and each value is a `Serializer` used to validate that
         property.
@@ -153,7 +159,7 @@ class ObjectSerializer(Serializer):
     type: str = field(default='object', init=False)
 
     properties: Mapping[str, Serializer] | None = None
-    pattern_properties: Mapping[str, Serializer] | None = None
+    pattern_properties: Mapping[str | re.Pattern, Serializer] | None = None
     additional_properties: Serializer | bool | None = None
     required: Iterable[str] | None = None
     max_properties: int | None = None
@@ -311,7 +317,7 @@ class ConstSerializer(Serializer):
 
 @dataclass(frozen=True, repr=False, kw_only=True)
 class AnySerializer(Serializer):
-    """Serializer for data type keyword"""
+    """Serializer for any type"""
 
     ...
 
@@ -343,8 +349,13 @@ class NotSerializer(Serializer):
     not_: Serializer = field(kw_only=False)
 
 
-def _schema_factory(data):
-    """Custom dict_factory for dataclasses.asdict."""
+def _schema_factory(data: list[tuple[str, Any]]):
+    """Custom dict_factory for dataclasses.asdict method."""
     return {
         encode_keyword(k): encode_value(v) for k, v in data if v is not None
     }
+
+
+def _get_kwargs(obj: Serializer):
+    """Return the keyword arguments from a Serializer object."""
+    return {f.name: getattr(obj, f.name) for f in fields(obj) if f.init}

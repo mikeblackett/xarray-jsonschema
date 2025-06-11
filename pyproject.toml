@@ -1,14 +1,15 @@
 [project]
-name = "xarray-model"
+name = "xarray-jsonschema"
 version = "0.0.0"
 description = "A JSON Schema powered validation library for xarray objects"
 authors = [
     {name = "Mike Blackett", email = "27811528+mikeblackett@users.noreply.github.com"},
 ]
-dependencies = ["xarray>=2025.4.0", "numpy>=2.2.5", "jsonschema>=4.23.0"]
+dependencies = ["xarray>=2025.6.1", "numpy>=2.3.0", "jsonschema>=4.24.0"]
 requires-python = ">=3.12"
 readme = "README.md"
 license = {text = "MIT"}
+
 [dependency-groups]
 dev = [
     "pytest>=8.3.5",

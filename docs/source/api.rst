@@ -1,4 +1,4 @@
-..  currentmodule:: xarray_model
+..  currentmodule:: xarray_jsonschema
 
 ..  _api:
 
@@ -6,35 +6,69 @@
 API reference
 #############
 
-This page provides an auto-generated summary of xarray-model's public API.
+This page provides an auto-generated summary of xarray-jsonschema's public API.
 
-Common components
+Schema components
 =================
 
 ..  autosummary::
     :toctree: generated/
 
-    Attr
-    Attrs
-    Chunks
-    Coords
-    DType
-    Dims
-    Shape
-    Size
+    AttrSchema
+    AttrsSchema
+    ChunksSchema
+    CoordsSchema
+    DTypeSchema
+    DataVarsSchema
+    DimsSchema
+    NameSchema
+    ShapeSchema
+    SizeSchema
 
-DataArrayModel
-==============
+DataArraySchema
+===============
 ..  autosummary::
     :toctree: generated/
 
-    Name
-    DataArrayModel
+    DataArraySchema
 
-DatasetModel
-============
+Attributes
+----------
 ..  autosummary::
     :toctree: generated/
 
-    DatasetModel
-    DataVars
+    DataArraySchema.schema
+    DataArraySchema.validator
+
+Methods
+-------
+..  autosummary::
+    :toctree: generated/
+
+    DataArraySchema.check_schema
+    DataArraySchema.to_json
+    DataArraySchema.validate
+
+DatasetSchema
+=============
+..  autosummary::
+    :toctree: generated/
+
+    DatasetSchema
+
+Attributes
+----------
+..  autosummary::
+    :toctree: generated/
+
+    DatasetSchema.schema
+    DatasetSchema.validator
+
+Methods
+-------
+..  autosummary::
+    :toctree: generated/
+
+    DatasetSchema.check_schema
+    DatasetSchema.to_json
+    DatasetSchema.validate

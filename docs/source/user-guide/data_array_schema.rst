@@ -1,10 +1,12 @@
-from enum import StrEnumDataArray Schemas
+DataArray Schemas
 =================
 
-The :py:class:`~.DataArraySchema` object enables the specification of schema
-that describe :py:class:`xarray.DataArray` objects. It accepts a set of optional
-components that correspond to the key properties of the :py:class:`~.DataArray`
-model:
+The :py:class:`~.DataArraySchema` object enables the specification of schema that
+describe :py:class:`xarray.DataArray` objects. The
+:py:class:`~.DataArraySchema` object consists of a set of optional schema components
+that prescribe the key properties of :py:class:`xarray.DataArray` objects.
+
+Currently, the following components are available:
 
 - ``attrs``: an :py:class:`~.AttrsSchema` object describing the array's attributes;
 - ``chunks``: a :py:class:`~.ChunksSchema` object describing the array's chunking;
@@ -14,21 +16,24 @@ model:
 - ``shape``: a :py:class:`~.ShapeSchema` object describing the array's shape;
 - ``name``: a :py:class:`~.NameSchema` object describing the array's name.
 
+In addition to being used in the context of a ``DataArraySchema`` all of the
+schema components can be used as standalone validation objects.
+
 To create a :py:class:`~.DataArraySchema` object, simply pass the
 components you want to validate as arguments to the constructor:
 
 ..  testsetup::
 
     >>> import numpy as np
-    >>> import xarray_jsonschema
+    >>> import xarray_jsonschema as xrjs
 
 ..  doctest::
 
-    >>> dims = xarray_jsonschema.DimsSchema(['x', 'y'])
-    >>> shape = xarray_jsonschema.ShapeSchema([4, 5])
-    >>> dtype = xarray_jsonschema.DTypeSchema(np.int16)
-    >>> name = xarray_jsonschema.NameSchema('foo')
-    >>> da_schema = xarray_jsonschema.DataArraySchema(dims=dims, shape=shape, dtype=dtype, name=name)
+    >>> dims = xrjs.DimsSchema(['x', 'y'])
+    >>> shape = xrjs.ShapeSchema([4, 5])
+    >>> dtype = xrjs.DTypeSchema(np.int16)
+    >>> name = xrjs.NameSchema('foo')
+    >>> da_schema = xrjs.DataArraySchema(dims=dims, shape=shape, dtype=dtype, name=name)
 
 Omitting a component, or setting it to ``None``, will cause the
 component to be ignored during validation.

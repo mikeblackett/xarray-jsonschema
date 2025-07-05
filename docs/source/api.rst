@@ -16,7 +16,6 @@ Schema components
 
     AttrSchema
     AttrsSchema
-    ChunksSchema
     CoordsSchema
     DTypeSchema
     DataVarsSchema
@@ -37,7 +36,7 @@ Attributes
 ..  autosummary::
     :toctree: generated/
 
-    DataArraySchema.schema
+    DataArraySchema.json
     DataArraySchema.validator
 
 Methods
@@ -46,7 +45,7 @@ Methods
     :toctree: generated/
 
     DataArraySchema.check_schema
-    DataArraySchema.to_json
+    DataArraySchema.dumps
     DataArraySchema.validate
 
 DatasetSchema
@@ -61,7 +60,7 @@ Attributes
 ..  autosummary::
     :toctree: generated/
 
-    DatasetSchema.schema
+    DatasetSchema.json
     DatasetSchema.validator
 
 Methods
@@ -70,5 +69,5 @@ Methods
     :toctree: generated/
 
     DatasetSchema.check_schema
-    DatasetSchema.to_json
+    DatasetSchema.dumps
     DatasetSchema.validate

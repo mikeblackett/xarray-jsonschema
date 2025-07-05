@@ -3,22 +3,21 @@ name = "xarray-jsonschema"
 version = "0.0.0"
 description = "A JSON Schema powered validation library for xarray objects"
 authors = [
-    {name = "Mike Blackett", email = "27811528+mikeblackett@users.noreply.github.com"},
+    { name = "Mike Blackett", email = "27811528+mikeblackett@users.noreply.github.com" },
 ]
-dependencies = ["xarray>=2025.6.1", "numpy>=2.3.0", "jsonschema>=4.24.0"]
+dependencies = ["xarray>=2025.6.1", "numpy<2.3", "jsonschema>=4.24.0"]
 requires-python = ">=3.12"
 readme = "README.md"
-license = {text = "MIT"}
+license = { text = "MIT" }
 
 [dependency-groups]
 dev = [
     "pytest>=8.3.5",
     "coverage>=7.8.1",
     "hypothesis>=6.131.31",
-    "pyright>=1.1.401",
-    "ruff>=0.11.12",
     "sphinx>=8.2.3",
     "pydata-sphinx-theme>=0.16.1",
+    "pyright>=1.1.402",
 ]
 [project.optional-dependencies]
 dask = [
@@ -47,3 +46,7 @@ skip-magic-trailing-comma = false
 
 [tool.ruff.lint]
 preview = false
+
+[tool.pyright]
+typeCheckingMode = 'standard'
+

@@ -79,18 +79,6 @@ class Serializer(ABC):
         """Convert this serializer to a JSON schema"""
         return as_schema(self)
 
-    # @classmethod
-    # def from_schema(cls, obj: Mapping[str, Any]) -> Self:
-    #     # TODO: (mike) implement `Serializer.from_schema`
-    #     kwargs = {
-    #         decode_keyword(f.name): _decode_json_value(
-    #             obj.get(encode_keyword(f.name))
-    #         )
-    #         for f in fields(cls)
-    #         if f.init
-    #     }
-    #     return cls(**kwargs)
-
     def __or__(self, other) -> 'Serializer':
         if not isinstance(other, type(self)):
             raise TypeError(
@@ -145,6 +133,9 @@ class ObjectSerializer(Serializer):
         An iterable of zero or more unique strings describing a list of
         required properties. Any properties not included in this list are treated
         as optional.
+    required_pattern_properties: Iterable[str] | None, default None
+        An iterable of zero or more regex strings describing a list of
+        required pattern properties.
     max_properties : int | None, default None
         A non-negative integer used to restrict the number of properties on an
         object.
@@ -162,13 +153,14 @@ class ObjectSerializer(Serializer):
     pattern_properties: Mapping[str | re.Pattern, Serializer] | None = None
     additional_properties: Serializer | bool | None = None
     required: Iterable[str] | None = None
+    required_pattern_properties: Iterable[str] | None = None
     max_properties: int | None = None
     min_properties: int | None = None
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class ArraySerializer(Serializer):
-    """Serializer for sequence type
+    """Serializer for sequence types.
 
     Attributes
     ----------
@@ -177,7 +169,8 @@ class ArraySerializer(Serializer):
         The empty array is always valid.
     prefix_items : Sequence[Serializer] | None, default None
         An array, where each item is a `Serializer` that corresponds to each
-        index of the instance's array.
+        index of the instance's array. Passing an empty array is equivalent to
+        passing ``None``.
     unevaluated_items : Serializer | None, default None
         A schema that applies to any values not evaluated by the `items`,
         `prefix_items`, or `contains` keyword.
@@ -207,10 +200,14 @@ class ArraySerializer(Serializer):
     max_items: int | None = None
     min_items: int | None = None
 
+    def __post_init__(self):
+        if self.prefix_items is not None and len(self.prefix_items) == 0:
+            object.__setattr__(self, 'prefix_items', None)
+
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class StringSerializer(Serializer):
-    """Serializer for string type
+    """Serializer for the string type.
 
     Attributes
     ----------
@@ -233,7 +230,7 @@ class StringSerializer(Serializer):
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class IntegerSerializer(Serializer):
-    """Serializer for integer type
+    """Serializer for the integer type.
 
     Attributes
     ----------

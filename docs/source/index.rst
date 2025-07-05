@@ -10,8 +10,8 @@ JSON Schema powered validation for xarray objects
 
 Xarray-jsonschema is an open source project that provides a simple API for
 validating xarray objects against `JSON Schema <https://json-schema.org/>`_.
-This project was heavily inspired by the
-`xarray-schema <https://github.com/xarray-contrib/xarray-schema>`_ project.
+This project was heavily inspired by `xarray-schema <https://github.com/xarray-contrib/xarray-schema>`_
+and `xarray-validate <https://github.com/leroyvn/xarray-validate>`_.
 
 ..  warning::
 

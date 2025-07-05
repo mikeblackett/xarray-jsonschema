@@ -1,43 +1,58 @@
+import inspect
 import json
+from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass, fields
 from functools import cached_property
 from typing import Any, ClassVar, Self
 
+import xarray as xr
 from jsonschema.protocols import Validator
 
-
-from xarray_jsonschema.encoders import encode_value
 from xarray_jsonschema.serializers import Serializer
-from xarray_jsonschema.validators import XarrayModelValidator
+from xarray_jsonschema.validator import XarrayValidator
 
 __all__ = ['XarraySchema']
 
 
-@dataclass(frozen=True, kw_only=True, repr=False)
-class XarraySchema(ABC):
-    """Abstract base class for xarray schema components.
+class XarraySchema[T: (xr.DataArray, xr.Dataset)](ABC):
+    """Abstract base class for xarray schema components."""
 
-    Parameters
-    ----------
-    key : str | None, default None
-        A key to identify the schema programmatically.
-    title : str | None, default None
-        A human-readable label for the schema.
-    description : str | None, default None
-        An arbitrary textual description of the schema.
-    """
+    _validator: ClassVar = XarrayValidator
 
-    _validator: ClassVar[type[Validator]] = XarrayModelValidator
+    def __init__(
+        self,
+        key: str | None = None,
+        title: str | None = None,
+        description: str | None = None,
+    ) -> None:
+        """Construct a new schema instance.
 
-    key: str | None = None
-    title: str | None = None
-    description: str | None = None
+        Parameters
+        ----------
+        key : str | None, default None
+            A key to identify the schema programmatically.
+        title : str | None, default None
+            A human-readable label for the schema.
+        description : str | None, default None
+            An arbitrary textual description of the schema.
+        """
+        self.key = key
+        self.title = title
+        self.description = description
+
+    def __call__(self, obj: T) -> None:
+        """Validate an instance against this schema."""
+        return self.validate(obj)
+
+    @abstractmethod
+    def validate(self, obj: T) -> None:
+        """Validate an instance against this schema."""
+        raise NotImplementedError  # pragma: no cover
 
     @cached_property
     @abstractmethod
     def serializer(self) -> Serializer:
-        """The ``Serializer`` for this schema."""
+        """The ``Serializer`` instance for this schema."""
         raise NotImplementedError  # pragma: no cover
 
     @cached_property
@@ -47,31 +62,18 @@ class XarraySchema(ABC):
 
     @cached_property
     def validator(self) -> Validator:
-        """The JSON Schema validator for this schema"""
-        return self._validator(schema=self.json)
+        """The JSON Schema ``Validator`` for this schema"""
+        return self._validator(schema=self.json)  # type: ignore
 
     def check_schema(self) -> None:
         """Validate this schema against the validator's meta-schema.
 
         Raises
         ------
-        jsonschema.exceptions.SchemaError
+        :py:class:`jsonschema.exceptions.SchemaError`
             If the schema is invalid.
         """
         self._validator.check_schema(schema=self.json)
-
-    def _validate(self, instance: Any) -> None:
-        """A simple wrapper around ``jsonschema.Validator.validate``"""
-        return self.validator.validate(instance=instance)
-
-    @abstractmethod
-    def validate(self, *args, **kwargs) -> None:
-        """Validate an instance against this schema."""
-        raise NotImplementedError  # pragma: no cover
-
-    def __call__(self, *args, **kwargs) -> None:
-        """Validate an instance against this schema."""
-        return self.validate(*args, **kwargs)
 
     def dumps(self, **kwargs) -> str:
         """Serialize this schema to a JSON formatted ``str``.
@@ -88,28 +90,52 @@ class XarraySchema(ABC):
         """
         return json.dumps(self.json, **kwargs)
 
-    def to_dict(self):
-        """Convert this schema to a Python dictionary."""
-        return asdict(self, dict_factory=_custom_dict_factory)
+    def _validate(self, instance: Any) -> None:
+        """A simple wrapper around ``jsonschema.Validator.validate``
+
+        Subclass should call this method in their ``validate`` method.
+        """
+        return self.validator.validate(instance=instance)
 
     @classmethod
     def convert(cls, value: Any) -> Self:
         """Attempt to convert a value to this schema."""
         if isinstance(value, cls):
             return value
-        return cls(value)  # type: ignore
+        return cls(value)
 
     def __repr__(self):
         # Show only non-default arguments...
         args = [
-            (f.name, getattr(self, f.name))
+            (f.name, f.value)
             for f in fields(self)
-            if getattr(self, f.name) != f.default
+            if f.value is not None and f.value is not f.default
         ]
-        args_string = ''.join(f'{name}={value}' for name, value in args)
+        args_string = ', '.join(f'{name}={value}' for name, value in args)
         return f'{self.__class__.__name__}({args_string})'
 
 
-def _custom_dict_factory(data: list[tuple[str, Any]]):
-    """Custom dict_factory for ``dataclasses.asdict()`` method which omits fields with values == None."""
-    return {k: encode_value(v) for k, v in data if v is not None}
+@dataclass
+class Field:
+    name: str
+    default: Any
+    value: Any
+
+
+def fields(obj: XarraySchema) -> tuple['Field', ...]:
+    """A tuple of ``Field`` instances for this schema.
+
+    Originally I (mike) wanted to use dataclasses for XarraySchema. But
+    performing parameter type conversions in `__post_init__` caused too many
+    type issues, so I refactored to use normal Python classes. This `_fields`
+    property and the associated `Fields` dataclass are very rudimentary
+    implementations of the similarly named features from the standard
+    library dataclasses. Their purpose is to gather parameter names, values
+     and default values, nothing more.
+    """
+    signature = inspect.signature(obj.__init__)
+    return tuple(
+        Field(name=k, default=v.default, value=getattr(obj, v.name))
+        for k, v in signature.parameters.items()
+        if v.default is not inspect.Parameter.empty
+    )

@@ -3,13 +3,9 @@
   <component name="com.insyncwithfoo.pyright.configurations.Override">
     <option name="names">
       <map>
-        <entry key="autoSearchPaths" value="true" />
         <entry key="configurationFile" value="true" />
-        <entry key="diagnosticMode" value="true" />
         <entry key="executable" value="true" />
         <entry key="languageServerExecutable" value="true" />
-        <entry key="targetedFileExtensions" value="true" />
-        <entry key="workspaceFolders" value="true" />
       </map>
     </option>
   </component>

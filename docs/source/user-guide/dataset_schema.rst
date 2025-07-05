@@ -3,14 +3,15 @@ Dataset Schemas
 ###############
 
 The :py:class:`~.DatasetSchema` object enables the specification of schema that
-prescribe the key properties of :py:class:`xarray.Dataset` objects. The :py:class:`~.DatasetSchema`
-object consists of a set of optional components that specify properties of the dataset.
+describe :py:class:`xarray.Dataset` objects. The
+:py:class:`~.DatasetSchema` object consists of a set of optional schema components
+that prescribe the key properties of :py:class:`xarray.Dataset` objects.
 
 Currently, the following components are available:
 
-- :py:class:`~.AttrsSchema`
-- :py:class:`~.CoordsSchema`
-- :py:class:`~.DataVarsSchema`
+- ``data_vars``: a :py:class:`~.DataVarsSchema` object describing the dataset's data variables;
+- ``coords``: a :py:class:`~.CoordsSchema` object describing the dataset's coordinates;
+- ``attrs``: a :py:class:`~.AttrsSchema` object describing the dataset's attributes.
 
 Creating a dataset schema
 -------------------------

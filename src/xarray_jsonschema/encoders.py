@@ -7,15 +7,6 @@ from typing import Any, Type
 
 import numpy as np
 
-DECODE_TYPES = {
-    'array': list,
-    'bool': bool,
-    'float': float,
-    'integer': int,
-    'null': None,
-    'object': dict,
-    'string': str,
-}
 
 ENCODE_KEYWORDS = {
     'anchor': '$anchor',
@@ -38,36 +29,19 @@ DECODE_KEYWORDS = {
 
 def encode_keyword(keyword: str):
     """Encode a Python-formatted keyword to JSON Schema."""
-    if isinstance(keyword, re.Pattern):
-        keyword = encode_value(keyword)
     result = _snake_case_to_camel_case(keyword)
     return ENCODE_KEYWORDS.get(result, result)
 
 
-# @singledispatch
-# def encode_keyword(keyword: Hashable):
-#     """Encode a Python-formatted keyword to JSON Schema."""
-#     return str(keyword)
-#
-#
-# @encode_keyword.register
-# def _(value: str) -> str:
-#     value = _snake_case_to_camel_case(value)
-#     return ENCODE_KEYWORDS.get(value, value)
-#
-#
-# @encode_keyword.register
-# def _(value: re.Pattern) -> str:
-#     return value.pattern
-
-
 @singledispatch
 def encode_value(value: Any) -> Any:
+    """Encode a Python value to JSON Schema."""
     return value  # Default: identity
 
 
 @encode_value.register
 def _(value: str) -> str:
+    # ``str`` needs to override Sequence encoder...
     return value
 
 
@@ -82,8 +56,14 @@ def _(value: set) -> list:
 
 
 @encode_value.register
+def _(value: EnumType) -> list:
+    return [member for member in value.__members__.values()]
+
+
+@encode_value.register
 def _(value: np.dtype) -> str:
-    return value.name
+    # This is consistent with  ``xarray.DataArray.to_dict()``
+    return str(value)
 
 
 @encode_value.register
@@ -99,11 +79,6 @@ def _(value: type) -> str:
 @encode_value.register
 def _(value: np.ndarray) -> list:
     return value.tolist()
-
-
-@encode_value.register
-def _(value: EnumType) -> list:
-    return [member.value for member in value.__members__.values()]
 
 
 def _encode_type(type_: Type) -> str:
@@ -133,17 +108,3 @@ def _snake_case_to_camel_case(string: str) -> str:
         return string
     string = ''.join(word.title() for word in string.split('_'))
     return string[0].lower() + string[1:]
-
-
-# def _camel_case_to_snake_case(string: str) -> str:
-#     return re.sub(r'(?<!^)(?=[A-Z])', '_', string).lower()
-
-
-# def decode_type(type_: str) -> Type:
-#     return DECODE_TYPES.get(type_, type_)
-#
-#
-# def decode_keyword(keyword: str):
-#     """Decode a JSON-Schema-formatted keyword to Python."""
-#     result = _camel_case_to_snake_case(keyword)
-#     return DECODE_KEYWORDS.get(result, result)

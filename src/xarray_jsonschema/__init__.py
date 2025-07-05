@@ -1,40 +1,36 @@
 # TODO: (mike) Custom error messages
 
-from ._version import version as __version__
-from .components import (
-    XarraySchema,
+from xarray_jsonschema._version import version as __version__
+from xarray_jsonschema.base import XarraySchema
+from xarray_jsonschema.components import (
     AttrSchema,
     AttrsSchema,
-    ChunksSchema,
+    # ChunksSchema,
     DimsSchema,
     DTypeSchema,
     NameSchema,
     ShapeSchema,
     SizeSchema,
 )
-from .containers import (
-    CoordsSchema,
-    DataArraySchema,
-    DatasetSchema,
-    DataVarsSchema,
-)
-from .exceptions import ValidationError, SchemaError
+from xarray_jsonschema.data_array import CoordsSchema, DataArraySchema
+from xarray_jsonschema.dataset import DatasetSchema, DataVarsSchema
+from xarray_jsonschema.exceptions import SchemaError, ValidationError
 
 __all__ = [
     '__version__',
-    'XarraySchema',
     'AttrSchema',
     'AttrsSchema',
-    'ChunksSchema',
+    # 'ChunksSchema',
     'CoordsSchema',
-    'DataArraySchema',
-    'DatasetSchema',
-    'DataVarsSchema',
     'DTypeSchema',
+    'DataArraySchema',
+    'DataVarsSchema',
+    'DatasetSchema',
     'DimsSchema',
     'NameSchema',
     'SchemaError',
     'ShapeSchema',
     'SizeSchema',
     'ValidationError',
+    'XarraySchema',
 ]

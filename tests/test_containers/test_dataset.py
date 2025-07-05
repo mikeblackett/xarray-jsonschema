@@ -2,8 +2,7 @@ import hypothesis as hp
 import xarray as xr
 import xarray.testing.strategies as xrst
 
-from tests.test_containers._strategies import data_vars_models, dataset_models
-from xarray_jsonschema.containers import DatasetSchema, DataVarsSchema
+from xarray_jsonschema.dataset import DatasetSchema, DataVarsSchema
 
 
 class TestDatasetModel:

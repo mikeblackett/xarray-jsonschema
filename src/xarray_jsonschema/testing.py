@@ -83,7 +83,7 @@ def dimension_names[T: Hashable](
     )
 
 
-def attrs(
+def nested_attrs(
     min_items: int = 0, max_leaves: int = 3
 ) -> st.SearchStrategy[dict[str, None | bool | float | int | str]]:
     return st.recursive(
@@ -94,6 +94,17 @@ def attrs(
             keys=_attr_keys, values=children, min_size=min_items
         ),
         max_leaves=max_leaves,
+    )
+
+
+@st.composite
+def attrs(
+    draw: st.DrawFn, min_items: int = 0
+) -> dict[str, None | bool | float | int | str]:
+    return draw(
+        st.dictionaries(
+            keys=_attr_keys, values=_attr_values, min_size=min_items
+        )
     )
 
 
@@ -116,12 +127,12 @@ def supported_dtype_likes(
                 [
                     # dtype
                     dtype,
-                    # # string
-                    # dtype.name,
-                    # # array-protocol typestring
-                    # dtype.str,
-                    # # One-character strings
-                    # dtype.char,
+                    # string
+                    dtype.name,
+                    # array-protocol typestring
+                    dtype.str,
+                    # One-character strings
+                    dtype.char,
                 ],
             )
         )
@@ -240,7 +251,10 @@ def data_arrays(
     attrs: st.SearchStrategy[Mapping] = attrs(),
     name: st.SearchStrategy[Hashable] = xrst.names(),
 ) -> xr.DataArray:
-    """Generate an arbitrary DataArray."""
+    """Generate an arbitrary DataArray.
+
+    Each dimension of the array will be a dimension-coordinate.
+    """
     da = draw(_data_arrays(dims=dims, dtype=dtype, attrs=attrs, name=name))
     dim_coords = draw(coords(dims=st.just(da.sizes)))
     return da.assign_coords(dim_coords)
@@ -252,10 +266,7 @@ def coords(
     *,
     dims: st.SearchStrategy[Mapping[Hashable, int]] = xrst.dimension_sizes(),
 ) -> dict[Hashable, xr.DataArray]:
-    """Generate a mapping of coordindate names to DataArrays.
-
-    Useful to generate dimension coordinates for DataArrays.
-    """
+    """Generate a mapping of coordindate names to DataArrays."""
     return {
         name: draw(
             _data_arrays(dims=st.just({name: size}), name=st.just(name))

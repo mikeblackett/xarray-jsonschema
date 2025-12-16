@@ -1,9 +1,11 @@
 from abc import ABC
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Container, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, fields
+from enum import EnumType
 from re import Pattern
 import re
 from typing import Any, Type
+
 
 from xarray_jsonschema.encoders import (
     encode_value,
@@ -28,6 +30,10 @@ __all__ = [
     'TypeSerializer',
     'as_schema',
 ]
+
+
+class Sentinels:
+    ELLIPSIS = Ellipsis
 
 
 class SerializationError(Exception):
@@ -97,6 +103,41 @@ class Serializer(ABC):
         args_string = ', '.join(f'{name}={value}' for name, value in args)
         return f'{self.__class__.__name__}({args_string})'
 
+    @classmethod
+    def from_python(cls, value: Any) -> 'Serializer':
+        match value:
+            case str() | int() | float() | bool() | None:
+                return ConstSerializer(value)
+            case EnumType():
+                return EnumSerializer(value)
+            case re.Pattern():
+                return StringSerializer(pattern=value.pattern)
+            case (v, Sentinels.ELLIPSIS):
+                return ArraySerializer(items=Serializer.from_python(v))
+            case Sequence():
+                return ArraySerializer(
+                    prefix_items=[Serializer.from_python(v) for v in value]
+                )
+            case Mapping():
+                return ObjectSerializer(
+                    properties={
+                        key: Serializer.from_python(value)
+                        for key, value in value.items()
+                        if isinstance(key, str)
+                    }
+                    or None,
+                    pattern_properties={
+                        key.pattern: Serializer.from_python(value)
+                        for key, value in value.items()
+                        if isinstance(key, re.Pattern)
+                    }
+                    or None,
+                )
+            case type():
+                return TypeSerializer(value)
+            case _:
+                raise NotImplementedError
+
 
 @dataclass(frozen=True, kw_only=True, repr=False)
 class EnumSerializer(Serializer):
@@ -105,8 +146,8 @@ class EnumSerializer(Serializer):
     Attributes
     ----------
     enum : Iterable[Any]
-        An iterable describing a fixed set of acceptable values. The iterable
-        must contain at least one value and each value must be unique.
+        An iterable describing a fixed set of acceptable values.
+        The iterable must contain at least one value and each value must be unique.
     """
 
     enum: Iterable[Any] = field(kw_only=False)
@@ -151,11 +192,18 @@ class ObjectSerializer(Serializer):
 
     properties: Mapping[str, Serializer] | None = None
     pattern_properties: Mapping[str | re.Pattern, Serializer] | None = None
+    property_names: Serializer | None = None
     additional_properties: Serializer | bool | None = None
     required: Iterable[str] | None = None
     required_pattern_properties: Iterable[str] | None = None
     max_properties: int | None = None
     min_properties: int | None = None
+
+    def __post_init__(self):
+        for f in fields(self):
+            value = getattr(self, f.name)
+            if isinstance(value, Container) and _is_container_empty(value):
+                object.__setattr__(self, f.name, None)
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
@@ -356,3 +404,7 @@ def _schema_factory(data: list[tuple[str, Any]]):
 def _get_kwargs(obj: Serializer):
     """Return the keyword arguments from a Serializer object."""
     return {f.name: getattr(obj, f.name) for f in fields(obj) if f.init}
+
+
+def _is_container_empty(value: Container) -> bool:
+    return not bool(value)

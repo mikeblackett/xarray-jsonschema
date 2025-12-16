@@ -99,7 +99,7 @@ class XarraySchema(ABC, Generic[T_Xarray]):
         return self.validator.validate(instance=instance)
 
     @classmethod
-    def convert(cls, value: Any) -> Self:
+    def from_python(cls, value: Any) -> Self:
         """Attempt to convert a value to this schema."""
         if isinstance(value, cls):
             return value
@@ -139,4 +139,38 @@ def fields(obj: XarraySchema) -> tuple['Field', ...]:
         Field(name=k, default=v.default, value=getattr(obj, v.name))
         for k, v in signature.parameters.items()
         if v.default is not inspect.Parameter.empty
+    )
+
+
+def mapping_to_object_normalizer(
+    data: Mapping[str, XarraySchema], *, strict: bool = False
+) -> ObjectNormalizer:
+    """Convert a mapping of schema components to an ``ObjectNormalizer``
+    instance.
+
+    Parameters
+    ----------
+    data : Mapping[str, XarraySchema]
+        A mapping of schema components. If the schema component has a regex attribute,
+        the key will be treated as a regex pattern.
+    strict : bool, default False
+        A flag indicating if additional properties should be allowed.
+    """
+    properties = {}
+    pattern_properties = {}
+    required = set()
+    required_pattern_properties = set()
+    for key, schema in data.items():
+        if getattr(schema, 'regex', False):
+            pattern_properties[key] = schema.normalizer
+        else:
+            properties[key] = schema.normalizer
+            if getattr(schema, 'required', False):
+                required.add(key)
+    return ObjectNormalizer(
+        properties=properties or None,
+        pattern_properties=pattern_properties or None,
+        required=required or None,
+        required_pattern_properties=required_pattern_properties or None,
+        additional_properties=not strict,
     )

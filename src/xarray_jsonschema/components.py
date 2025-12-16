@@ -138,10 +138,10 @@ class DimsSchema(XarraySchema[xr.DataArray]):
         max_dims: int | None = None,
     ) -> None:
         super().__init__()
-        self.dims = [NameSchema.convert(dim) for dim in dims or []]
+        self.dims = [NameSchema.from_python(dim) for dim in dims or []]
         self.min_dims = len(self.dims) if min_dims is None else min_dims
         self.max_dims = max_dims
-        self.contains = NameSchema.convert(contains) if contains else None
+        self.contains = NameSchema.from_python(contains) if contains else None
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -237,7 +237,10 @@ class AttrsSchema(XarraySchema):
         strict: bool = False,
     ) -> None:
         self.attrs = (
-            {key: AttrSchema.convert(value) for key, value in attrs.items()}
+            {
+                key: AttrSchema.from_python(value)
+                for key, value in attrs.items()
+            }
             if attrs
             else {}
         )
@@ -346,7 +349,7 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
     ) -> None:
         super().__init__()
         self.shape = (
-            [SizeSchema.convert(size) for size in shape] if shape else None
+            [SizeSchema.from_python(size) for size in shape] if shape else None
         )
         self.min_dims = min_dims
         self.max_dims = max_dims

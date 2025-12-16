@@ -12,7 +12,6 @@ from xarray_jsonschema import (
     NameSchema,
     ShapeSchema,
     SizeSchema,
-    XarraySchema,
 )
 from xarray_jsonschema._normalizers import Normalizer, ObjectNormalizer
 from xarray_jsonschema.base import XarraySchema, mapping_to_object_normalizer
@@ -80,12 +79,12 @@ class DataArraySchema(XarraySchema[xr.DataArray]):
         title: str | None = None,
         description: str | None = None,
     ) -> None:
-        self.dims = DimsSchema.convert(dims) if dims else None
-        self.attrs = AttrsSchema.convert(attrs) if attrs else None
-        self.dtype = DTypeSchema.convert(dtype) if dtype else None
-        self.shape = ShapeSchema.convert(shape) if shape else None
-        self.coords = CoordsSchema.convert(coords) if coords else None
-        self.name = NameSchema.convert(name) if name else None
+        self.dims = DimsSchema.from_python(dims) if dims else None
+        self.attrs = AttrsSchema.from_python(attrs) if attrs else None
+        self.dtype = DTypeSchema.from_python(dtype) if dtype else None
+        self.shape = ShapeSchema.from_python(shape) if shape else None
+        self.coords = CoordsSchema.from_python(coords) if coords else None
+        self.name = NameSchema.from_python(name) if name else None
         self.regex = regex
         self.required = required
 

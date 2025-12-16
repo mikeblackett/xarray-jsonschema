@@ -9,7 +9,6 @@ from xarray_jsonschema import (
     AttrsSchema,
     CoordsSchema,
     DataArraySchema,
-    XarraySchema,
 )
 from xarray_jsonschema._normalizers import Normalizer, ObjectNormalizer
 from xarray_jsonschema.base import XarraySchema, mapping_to_object_normalizer
@@ -73,10 +72,10 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
         title: str | None = None,
         description: str | None = None,
     ) -> None:
-        self.coords = CoordsSchema.convert(coords) if coords else None
-        self.attrs = AttrsSchema.convert(attrs) if attrs else None
+        self.coords = CoordsSchema.from_python(coords) if coords else None
+        self.attrs = AttrsSchema.from_python(attrs) if attrs else None
         self.data_vars = (
-            DataVarsSchema.convert(data_vars) if data_vars else None
+            DataVarsSchema.from_python(data_vars) if data_vars else None
         )
 
         super().__init__(title=title, description=description)

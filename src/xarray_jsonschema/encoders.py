@@ -1,12 +1,11 @@
-from enum import EnumType
-from functools import singledispatch
 import re
 from collections.abc import Mapping, Sequence
+from enum import EnumType, IntEnum, StrEnum
+from functools import singledispatch
 from types import NoneType
 from typing import Any, Type
 
 import numpy as np
-
 
 ENCODE_KEYWORDS = {
     'anchor': '$anchor',
@@ -53,6 +52,16 @@ def _(value: Sequence) -> list:
 @encode_value.register
 def _(value: set) -> list:
     return list(value)
+
+
+@encode_value.register
+def _(value: StrEnum) -> str:
+    return value.value
+
+
+@encode_value.register
+def _(value: IntEnum) -> int:
+    return value.value
 
 
 @encode_value.register

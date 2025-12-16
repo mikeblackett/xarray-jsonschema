@@ -14,9 +14,9 @@ from xarray_jsonschema import (
     SizeSchema,
     XarraySchema,
 )
-from xarray_jsonschema.utilities import mapping_to_object_serializer
+from xarray_jsonschema._normalizers import Normalizer, ObjectNormalizer
+from xarray_jsonschema.base import XarraySchema, mapping_to_object_normalizer
 from xarray_jsonschema.components import AttrsSchema
-from xarray_jsonschema.serializers import Serializer, ObjectSerializer
 
 
 class CoordsSchema(XarraySchema):
@@ -32,8 +32,8 @@ class CoordsSchema(XarraySchema):
         self.strict = strict
 
     @cached_property
-    def serializer(self) -> Serializer:
-        return mapping_to_object_serializer(self.coords, strict=self.strict)
+    def normalizer(self) -> Normalizer:
+        return mapping_to_object_normalizer(self.coords, strict=self.strict)
 
     def validate(self, obj: xr.DataArray | xr.Dataset) -> None:
         instance = obj.to_dict(data=False)['coords']
@@ -92,12 +92,12 @@ class DataArraySchema(XarraySchema[xr.DataArray]):
         super().__init__(title=title, description=description)
 
     @cached_property
-    def serializer(self) -> Serializer:
-        return ObjectSerializer(
+    def normalizer(self) -> Normalizer:
+        return ObjectNormalizer(
             title=self.title,
             description=self.description,
             properties={
-                key: getattr(self, key).serializer
+                key: getattr(self, key).normalizer
                 for key in self._components
                 if getattr(self, key) is not None
             },

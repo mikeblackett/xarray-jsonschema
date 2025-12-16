@@ -7,19 +7,18 @@ import xarray as xr
 from numpy.typing import DTypeLike
 from typing_extensions import assert_never
 
-from xarray_jsonschema.base import XarraySchema
-from xarray_jsonschema.utilities import mapping_to_object_serializer
-from xarray_jsonschema.encoders import encode_value
-from xarray_jsonschema.serializers import (
-    AnySerializer,
-    ArraySerializer,
-    ConstSerializer,
-    EnumSerializer,
-    IntegerSerializer,
-    Serializer,
-    StringSerializer,
-    TypeSerializer,
+from xarray_jsonschema._normalizers import (
+    AnyNormalizer,
+    ArrayNormalizer,
+    ConstNormalizer,
+    EnumNormalizer,
+    IntegerNormalizer,
+    Normalizer,
+    StringNormalizer,
+    TypeNormalizer,
+    normalize_value,
 )
+from xarray_jsonschema.base import XarraySchema, mapping_to_object_normalizer
 
 __all__ = [
     'AttrsSchema',
@@ -73,9 +72,9 @@ class NameSchema(XarraySchema[xr.DataArray]):
         self.max_length = max_length
 
     @cached_property
-    def serializer(self) -> Serializer:
+    def normalizer(self) -> Normalizer:
         # TODO: (mike) support validating 'null' names?
-        schema = StringSerializer(
+        schema = StringNormalizer(
             min_length=self.min_length,
             max_length=self.max_length,
         )
@@ -83,11 +82,11 @@ class NameSchema(XarraySchema[xr.DataArray]):
             case None:
                 pass
             case str() if self.regex:
-                schema |= StringSerializer(pattern=self.name)
+                schema |= StringNormalizer(pattern=self.name)
             case str():
-                schema = ConstSerializer(self.name)
+                schema = ConstNormalizer(self.name)
             case Iterable():
-                schema = EnumSerializer(self.name)
+                schema = EnumNormalizer(self.name)
             case _:  # pragma: no cover
                 raise TypeError(
                     f'unsupported "name" type: {type(self.name).__name__!r}'
@@ -145,14 +144,14 @@ class DimsSchema(XarraySchema[xr.DataArray]):
         self.contains = NameSchema.convert(contains) if contains else None
 
     @cached_property
-    def serializer(self) -> Serializer:
-        prefix_items = [name.serializer for name in self.dims]
-        return ArraySerializer(
-            items=False if prefix_items else StringSerializer(),
+    def normalizer(self) -> Normalizer:
+        prefix_items = [name.normalizer for name in self.dims]
+        return ArrayNormalizer(
+            items=False if prefix_items else StringNormalizer(),
             prefix_items=prefix_items,
             max_items=self.max_dims,
             min_items=self.min_dims,
-            contains=self.contains.serializer if self.contains else None,
+            contains=self.contains.normalizer if self.contains else None,
         )
 
     def validate(self, obj: xr.DataArray) -> None:
@@ -187,26 +186,27 @@ class AttrSchema(XarraySchema):
         self.required = required
 
     @cached_property
-    def serializer(self) -> Serializer:
+    def normalizer(self) -> Normalizer:
         match self.value:
             case type():
-                return TypeSerializer(self.value)
+                return TypeNormalizer(self.value)
             case None:
-                return AnySerializer()
+                return AnyNormalizer()
             case str():
-                return ConstSerializer(self.value)
+                # Prevent str being caught by Sequence()
+                return ConstNormalizer(self.value)
             case Mapping():
-                return AttrsSchema(self.value).serializer
+                return AttrsSchema(self.value).normalizer
             case Sequence():
                 prefix_items = [
-                    TypeSerializer(v)
+                    TypeNormalizer(v)
                     if isinstance(v, type)
-                    else ConstSerializer(v)
+                    else ConstNormalizer(v)
                     for v in self.value
                 ]
-                return ArraySerializer(prefix_items=prefix_items)
+                return ArrayNormalizer(prefix_items=prefix_items)
             case _:
-                return ConstSerializer(encode_value(self.value))
+                return ConstNormalizer(normalize_value(self.value))
 
     def validate(self, _) -> None:  # type: ignore
         raise NotImplementedError()  # pragma: no cover
@@ -245,8 +245,8 @@ class AttrsSchema(XarraySchema):
         super().__init__()
 
     @cached_property
-    def serializer(self) -> Serializer:
-        return mapping_to_object_serializer(self.attrs, strict=self.strict)
+    def normalizer(self) -> Normalizer:
+        return mapping_to_object_normalizer(self.attrs, strict=self.strict)
 
     def validate(self, obj: xr.DataArray | xr.Dataset) -> None:
         instance = obj.to_dict(data=False)['attrs']
@@ -268,8 +268,8 @@ class DTypeSchema(XarraySchema[xr.DataArray]):
         self.dtype = np.dtype(dtype)
 
     @cached_property
-    def serializer(self) -> Serializer:
-        return ConstSerializer(self.dtype)
+    def normalizer(self) -> Normalizer:
+        return ConstNormalizer(self.dtype)
 
     def validate(self, obj: xr.DataArray) -> None:
         instance = obj.to_dict(data=False)['dtype']
@@ -305,15 +305,15 @@ class SizeSchema(XarraySchema[xr.DataArray]):
         self.minimum = minimum
 
     @cached_property
-    def serializer(self) -> Serializer:
+    def normalizer(self) -> Normalizer:
         match self.size:
             case None:
-                return IntegerSerializer(
+                return IntegerNormalizer(
                     maximum=self.maximum,
                     minimum=self.minimum,
                 )
             case int():
-                return ConstSerializer(self.size)
+                return ConstNormalizer(self.size)
             case _:  # pragma: no cover
                 raise TypeError(
                     f'unsupported "size" type: {type(self.name).__name__!r}'
@@ -352,9 +352,9 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
         self.max_dims = max_dims
 
     @cached_property
-    def serializer(self) -> Serializer:
-        schema = ArraySerializer(
-            items=IntegerSerializer(),
+    def normalizer(self) -> Normalizer:
+        schema = ArrayNormalizer(
+            items=IntegerNormalizer(),
             min_items=self.min_dims,
             max_items=self.max_dims,
         )
@@ -363,9 +363,10 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
                 pass
             case Sequence():
                 prefix_items = [
-                    SizeSchema.convert(size).serializer for size in self.shape
+                    SizeSchema.from_python(size).normalizer
+                    for size in self.shape
                 ]
-                schema |= ArraySerializer(
+                schema |= ArrayNormalizer(
                     prefix_items=prefix_items,
                     items=False,
                     min_items=len(prefix_items),
@@ -392,12 +393,12 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
 #         self.size = size
 #
 #     @cached_property
-#     def serializer(self) -> Serializer:
+#     def normalizer(self) -> Normalizer:
 #         match self.size:
 #             case -1:
 #                 # `-1` is a dask wildcard meaning "use the full dimension size."
-#                 return ArraySerializer(
-#                     items=IntegerSerializer(), min_items=1, max_items=1
+#                 return ArrayNormalizer(
+#                     items=IntegerNormalizer(), min_items=1, max_items=1
 #                 )
 #             case int():
 #                 # A single integer is used to represent a uniform chunk size
@@ -407,13 +408,13 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
 #                 #  variable chunk is last in the array. That is currently not
 #                 #  possible with JSON Schema (https://github.com/json-schema-org/json-schema-spec/issues/1060).
 #                 #  We could opt for custom validation...
-#                 return ArraySerializer(
+#                 return ArrayNormalizer(
 #                     # First chunk is equal to `shape`.
-#                     prefix_items=[ConstSerializer(self.size)],
+#                     prefix_items=[ConstNormalizer(self.size)],
 #                     # Other chunks are `shape` or smaller...
-#                     items=IntegerSerializer(maximum=self.size),
+#                     items=IntegerNormalizer(maximum=self.size),
 #                     # but there is only one "other" chunk.
-#                     contains=IntegerSerializer(exclusive_maximum=self.size),
+#                     contains=IntegerNormalizer(exclusive_maximum=self.size),
 #                     max_contains=1,
 #                     min_contains=0,
 #                 )
@@ -421,12 +422,12 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
 #                 # Expect a full match of the provided shape to the chunk size.
 #                 # Can use -1 as a wildcard.
 #                 prefix_items = [
-#                     IntegerSerializer()
+#                     IntegerNormalizer()
 #                     if size == -1
-#                     else ConstSerializer(size)
+#                     else ConstNormalizer(size)
 #                     for size in self.size
 #                 ]
-#                 return ArraySerializer(
+#                 return ArrayNormalizer(
 #                     prefix_items=prefix_items,
 #                     items=False,
 #                 )
@@ -464,25 +465,25 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
 #         self.chunks = chunks
 #
 #     @cached_property
-#     def serializer(self) -> Serializer:
+#     def normalizer(self) -> Normalizer:
 #         match self.chunks:
 #             case None:
-#                 return AnySerializer()
+#                 return AnyNormalizer()
 #             case True:
-#                 return ArraySerializer(
-#                     items=ArraySerializer(items=IntegerSerializer())
+#                 return ArrayNormalizer(
+#                     items=ArrayNormalizer(items=IntegerNormalizer())
 #                 )
 #             case False:
-#                 return NullSerializer()
+#                 return NullNormalizer()
 #             case int():
-#                 return ArraySerializer(
-#                     items=_ChunkSchema(self.chunks).serializer
+#                 return ArrayNormalizer(
+#                     items=_ChunkSchema(self.chunks).normalizer
 #                 )
 #             case Sequence():
 #                 prefix_items = [
-#                     _ChunkSchema(chunk).serializer for chunk in self.chunks
+#                     _ChunkSchema(chunk).normalizer for chunk in self.chunks
 #                 ]
-#                 return ArraySerializer(
+#                 return ArrayNormalizer(
 #                     prefix_items=prefix_items,
 #                     items=False,
 #                 )

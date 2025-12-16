@@ -1,6 +1,7 @@
 import inspect
 import json
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Any, ClassVar, Generic, Self
@@ -8,7 +9,7 @@ from typing import Any, ClassVar, Generic, Self
 from jsonschema.protocols import Validator
 from xarray.core.types import T_Xarray
 
-from xarray_jsonschema.serializers import Serializer
+from xarray_jsonschema._normalizers import Normalizer, ObjectNormalizer
 from xarray_jsonschema.validator import XarrayValidator
 
 __all__ = ['XarraySchema']
@@ -51,14 +52,14 @@ class XarraySchema(ABC, Generic[T_Xarray]):
 
     @cached_property
     @abstractmethod
-    def serializer(self) -> Serializer:
-        """The ``Serializer`` instance for this schema."""
+    def normalizer(self) -> Normalizer:
+        """The ``Normalizer`` instance for this schema."""
         raise NotImplementedError  # pragma: no cover
 
     @cached_property
     def json(self) -> dict[str, Any]:
         """The JSON schema for this object."""
-        return self.serializer.serialize()
+        return self.normalizer.normalize()
 
     @cached_property
     def validator(self) -> Validator:

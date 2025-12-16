@@ -10,9 +10,9 @@ from jsonschema import (
     Draft202012Validator,
     TypeChecker,
     ValidationError,
-    Validator,
     validators,
 )
+from jsonschema.protocols import Validator
 
 __all__ = ['XarrayValidator']
 

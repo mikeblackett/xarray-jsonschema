@@ -164,3 +164,7 @@ cython_debug/
 # Sphinx
 doc/_build
 doc/generated/
+
+notebooks/
+
+.vscode/

@@ -5,8 +5,8 @@ description = "A JSON Schema powered validation library for xarray objects"
 authors = [
     { name = "Mike Blackett", email = "27811528+mikeblackett@users.noreply.github.com" },
 ]
-dependencies = ["xarray>=2025.6.1", "numpy<2.3", "jsonschema>=4.24.0"]
-requires-python = ">=3.12"
+dependencies = ["xarray>=2025.6.1", "numpy<2.3", "jsonschema>=4.24.0", "pandera>=0.24.0"]
+requires-python = ">=3.11"
 readme = "README.md"
 license = { text = "MIT" }
 
@@ -15,38 +15,32 @@ dev = [
     "pytest>=8.3.5",
     "coverage>=7.8.1",
     "hypothesis>=6.131.31",
-    "sphinx>=8.2.3",
-    "pydata-sphinx-theme>=0.16.1",
     "pyright>=1.1.402",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.9",
 ]
 [project.optional-dependencies]
 dask = [
     "dask>=2025.5.0",
 ]
+docs = [
+    "sphinx>=9.0.4",
+]
 
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
-
-[tool.pdm]
-distribution = true
+requires = ["uv_build>=0.8.6,<0.9.0"]
+build-backend = "uv_build"
 
 [tool.ruff]
 line-length = 79
-indent-width = 4
-extend-include = ["*.ipynb"]
 
 [tool.ruff.format]
-docstring-code-format = false
-docstring-code-line-length = "dynamic"
-indent-style = "space"
-line-ending = "auto"
 quote-style = "single"
-skip-magic-trailing-comma = false
 
-[tool.ruff.lint]
-preview = false
+[tool.coverage.run]
+source = ["livecov"]
 
-[tool.pyright]
-typeCheckingMode = 'standard'
+[tool.pytest.ini_options]
+addopts = "--cov=xarray_jsonschema --cov-report=xml --cov-report=term"
+testpaths = ["tests"]
 

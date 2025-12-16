@@ -2,7 +2,7 @@ import hypothesis as hp
 import xarray as xr
 
 from tests._strategies import coords_schemas, data_array_schemas
-from xarray_jsonschema import DataArraySchema, CoordsSchema
+from xarray_jsonschema import CoordsSchema, DataArraySchema
 from xarray_jsonschema.testing import data_arrays
 
 

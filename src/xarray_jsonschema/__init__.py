@@ -12,8 +12,12 @@ from xarray_jsonschema.components import (
     ShapeSchema,
     SizeSchema,
 )
-from xarray_jsonschema.data_array import CoordsSchema, DataArraySchema
-from xarray_jsonschema.dataset import DatasetSchema, DataVarsSchema
+from xarray_jsonschema.containers import (
+    CoordsSchema,
+    DataArraySchema,
+    DatasetSchema,
+    DataVarsSchema,
+)
 from xarray_jsonschema.exceptions import SchemaError, ValidationError
 
 __all__ = [

@@ -3,7 +3,7 @@ import xarray as xr
 import xarray.testing.strategies as xrst
 
 from tests._strategies import data_vars_schemas, dataset_schemas
-from xarray_jsonschema.dataset import DatasetSchema, DataVarsSchema
+from xarray_jsonschema import DatasetSchema, DataVarsSchema
 
 
 class TestDatasetModel:

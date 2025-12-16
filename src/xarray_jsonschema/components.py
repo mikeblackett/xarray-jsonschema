@@ -8,7 +8,7 @@ from numpy.typing import DTypeLike
 from typing_extensions import assert_never
 
 from xarray_jsonschema.base import XarraySchema
-from xarray_jsonschema.utilities import mapping_to_objectserializer
+from xarray_jsonschema.utilities import mapping_to_object_serializer
 from xarray_jsonschema.encoders import encode_value
 from xarray_jsonschema.serializers import (
     AnySerializer,
@@ -242,7 +242,7 @@ class AttrsSchema(XarraySchema):
 
     @cached_property
     def serializer(self) -> Serializer:
-        return mapping_to_objectserializer(self.attrs, strict=self.strict)
+        return mapping_to_object_serializer(self.attrs, strict=self.strict)
 
     def validate(self, obj: xr.DataArray | xr.Dataset) -> None:
         instance = obj.to_dict(data=False)['attrs']

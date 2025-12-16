@@ -6,13 +6,13 @@ import xarray as xr
 
 from xarray_jsonschema import (
     AttrSchema,
+    AttrsSchema,
+    CoordsSchema,
+    DataArraySchema,
     XarraySchema,
 )
-from xarray_jsonschema import DataArraySchema
-from xarray_jsonschema.utilities import mapping_to_objectserializer
-from xarray_jsonschema.components import AttrsSchema
-from xarray_jsonschema.data_array import CoordsSchema, DataArraySchema
-from xarray_jsonschema.serializers import Serializer, ObjectSerializer
+from xarray_jsonschema.serializers import ObjectSerializer, Serializer
+from xarray_jsonschema.utilities import mapping_to_object_serializer
 
 
 class DataVarsSchema(XarraySchema[xr.Dataset]):
@@ -29,7 +29,7 @@ class DataVarsSchema(XarraySchema[xr.Dataset]):
 
     @cached_property
     def serializer(self) -> Serializer:
-        return mapping_to_objectserializer(self.data_vars, strict=self.strict)
+        return mapping_to_object_serializer(self.data_vars, strict=self.strict)
 
     def validate(self, obj: xr.Dataset) -> None:
         instance = obj.to_dict(data=False)['data_vars']

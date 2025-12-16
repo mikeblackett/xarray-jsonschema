@@ -4,7 +4,7 @@ from xarray_jsonschema import XarraySchema
 from xarray_jsonschema.serializers import ObjectSerializer
 
 
-def mapping_to_objectserializer(
+def mapping_to_object_serializer(
     data: Mapping[str, XarraySchema], *, strict: bool = False
 ) -> ObjectSerializer:
     """Convert a mapping of schema components to an ``ObjectSerializer``

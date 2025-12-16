@@ -1,70 +1,145 @@
+import re
 from abc import ABC
 from collections.abc import Container, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, fields
-from enum import EnumType
+from enum import EnumType, IntEnum, StrEnum
+from functools import singledispatch
 from re import Pattern
-import re
+from types import NoneType
 from typing import Any, Type
 
-
-from xarray_jsonschema.encoders import (
-    encode_value,
-    encode_keyword,
-)
+import numpy as np
 
 __all__ = [
-    'AnySerializer',
-    'ArraySerializer',
-    'BooleanSerializer',
-    'ConstSerializer',
-    'DeserializationError',
-    'EnumSerializer',
-    'IntegerSerializer',
-    'NotSerializer',
-    'NullSerializer',
-    'NumberSerializer',
-    'ObjectSerializer',
-    'SerializationError',
-    'Serializer',
-    'StringSerializer',
-    'TypeSerializer',
+    'AnyNormalizer',
+    'ArrayNormalizer',
+    'BooleanNormalizer',
+    'ConstNormalizer',
+    'EnumNormalizer',
+    'IntegerNormalizer',
+    'NotNormalizer',
+    'NullNormalizer',
+    'NumberNormalizer',
+    'ObjectNormalizer',
+    'Normalizer',
+    'StringNormalizer',
+    'TypeNormalizer',
     'as_schema',
 ]
+
+
+KEYWORDS = {
+    'anchor': '$anchor',
+    'comment': '$comment',
+    'id': '$id',
+    'ref': '$ref',
+    'schema': '$schema',
+    'vocabulary': '$vocabulary',
+}
+"""Mapping from python strings to JSON Schema keywords."""
 
 
 class Sentinels:
     ELLIPSIS = Ellipsis
 
 
-class SerializationError(Exception):
-    """Raised when serialization fails."""
-
-    def __init__(self, message: str):
-        super().__init__(message)
-
-
-class DeserializationError(Exception):
-    """Raised when deserialization fails."""
-
-    def __init__(self, message: str):
-        super().__init__(message)
+def normalize_keyword(keyword: str):
+    """Encode a Python-formatted keyword to JSON Schema."""
+    result = _snake_case_to_camel_case(keyword)
+    return KEYWORDS.get(result, result)
 
 
-def as_schema(obj: 'Serializer') -> dict:
-    """Encode a Serializer as a JSON Schema schema"""
+@singledispatch
+def normalize_value(value: Any) -> Any:
+    """Normalize a Python value to JSON Schema."""
+    return value  # Default: identity
+
+
+@normalize_value.register
+def _(value: str) -> str:
+    # ``str`` needs to override Sequence encoder...
+    return value
+
+
+@normalize_value.register
+def _(value: Sequence) -> list:
+    return list(value)
+
+
+@normalize_value.register
+def _(value: set) -> list:
+    return list(value)
+
+
+@normalize_value.register
+def _(value: StrEnum) -> str:
+    return value.value
+
+
+@normalize_value.register
+def _(value: IntEnum) -> int:
+    return value.value
+
+
+@normalize_value.register
+def _(value: EnumType) -> list:
+    return [member for member in value.__members__.values()]
+
+
+@normalize_value.register
+def _(value: np.dtype) -> str:
+    # This is consistent with  ``xarray.DataArray.to_dict()``
+    return str(value)
+
+
+@normalize_value.register
+def _(value: re.Pattern) -> str:
+    return value.pattern
+
+
+@normalize_value.register
+def _(value: type) -> str:
+    if issubclass(value, str):
+        return 'string'
+    elif issubclass(value, bool):
+        return 'boolean'
+    elif issubclass(value, int):
+        return 'integer'
+    elif issubclass(value, float):
+        return 'number'
+    elif issubclass(value, Mapping):
+        return 'object'
+    elif issubclass(value, Sequence) and not issubclass(value, str):
+        return 'array'
+    elif issubclass(value, np.ndarray):
+        return 'array'
+    elif issubclass(value, NoneType):
+        return 'null'
+    raise TypeError(
+        f'Error encoding python type {value!r} as JSON Schema type.'
+    )
+
+
+@normalize_value.register
+def _(value: np.ndarray) -> list:
+    return value.tolist()
+
+
+def as_schema(obj: 'Normalizer') -> dict:
+    """Return the fields of a `Normalizer` instance as a JSON Schema"""
     return asdict(obj, dict_factory=_schema_factory)
 
 
 @dataclass(frozen=True, kw_only=True)
-class Serializer(ABC):
-    """Abstract base class for serializing Python objects to JSON Schema.
+class Normalizer(ABC):
+    """Abstract base class for normalizing Python objects to JSON Schema.
 
-    Each serializer should correspond to a JSON Schema Data Type. The attributes
-    of a Serializer class should correspond to JSON Schema keywords. The values
-    corresponding to the keywords can be Python primitives, or other `Serializers`.
+    Each Normalizer should correspond to a JSON Schema Data Type. The attributes
+    of a `Normalizer` class should correspond to JSON Schema keywords. The values
+    corresponding to the keywords can be Python primitives, or other `Normalizer`s.
 
     Keyword attributes should be declared in snake_case without prefixes, they
-    will be converted to JSON Schema when serializing.
+    will be converted to JSON Schema when normalizing.
 
     Attributes
     ----------
@@ -81,14 +156,14 @@ class Serializer(ABC):
     description: str | None = None
     comment: str | None = None
 
-    def serialize(self) -> dict[str, Any]:
-        """Convert this serializer to a JSON schema"""
+    def normalize(self) -> dict[str, Any]:
+        """Return the fields of this instance as a JSON Schema"""
         return as_schema(self)
 
-    def __or__(self, other) -> 'Serializer':
+    def __or__(self, other) -> 'Normalizer':
         if not isinstance(other, type(self)):
             raise TypeError(
-                'Serializer objects are only unionable with their own type;'
+                'Normalizer objects are only unionable with their own type;'
                 f' expected {type(self).__name__}, got {type(other).__name__}.'
             )
         return self.__class__(**_get_kwargs(self) | _get_kwargs(other))  # type: ignore
@@ -104,44 +179,44 @@ class Serializer(ABC):
         return f'{self.__class__.__name__}({args_string})'
 
     @classmethod
-    def from_python(cls, value: Any) -> 'Serializer':
+    def from_python(cls, value: Any) -> 'Normalizer':
         match value:
             case str() | int() | float() | bool() | None:
-                return ConstSerializer(value)
+                return ConstNormalizer(value)
             case EnumType():
-                return EnumSerializer(value)
+                return EnumNormalizer(value)
             case re.Pattern():
-                return StringSerializer(pattern=value.pattern)
+                return StringNormalizer(pattern=value.pattern)
             case (v, Sentinels.ELLIPSIS):
-                return ArraySerializer(items=Serializer.from_python(v))
+                return ArrayNormalizer(items=Normalizer.from_python(v))
             case Sequence():
-                return ArraySerializer(
-                    prefix_items=[Serializer.from_python(v) for v in value]
+                return ArrayNormalizer(
+                    prefix_items=[Normalizer.from_python(v) for v in value]
                 )
             case Mapping():
-                return ObjectSerializer(
+                return ObjectNormalizer(
                     properties={
-                        key: Serializer.from_python(value)
+                        key: Normalizer.from_python(value)
                         for key, value in value.items()
                         if isinstance(key, str)
                     }
                     or None,
                     pattern_properties={
-                        key.pattern: Serializer.from_python(value)
+                        key.pattern: Normalizer.from_python(value)
                         for key, value in value.items()
                         if isinstance(key, re.Pattern)
                     }
                     or None,
                 )
             case type():
-                return TypeSerializer(value)
+                return TypeNormalizer(value)
             case _:
                 raise NotImplementedError
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class EnumSerializer(Serializer):
-    """Serializer for enum type
+class EnumNormalizer(Normalizer):
+    """Normalizer for enum type
 
     Attributes
     ----------
@@ -154,19 +229,19 @@ class EnumSerializer(Serializer):
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class ObjectSerializer(Serializer):
-    """Serializer for mapping type
+class ObjectNormalizer(Normalizer):
+    """Normalizer for mapping type
 
     Attributes
     ----------
-    properties : Mapping[str, Serializer] | None, default None
+    properties : Mapping[str, Normalizer] | None, default None
         A mapping where each key is the name of a property and each value is a
-        `Serializer` used to validate that property.
-    pattern_properties : Mapping[str | re.Pattern, Serializer] | None, default None
+        `Normalizer` used to validate that property.
+    pattern_properties : Mapping[str | re.Pattern, Normalizer] | None, default None
         A mapping where each key is a regular expression used to match the name
-        of a property and each value is a `Serializer` used to validate that
+        of a property and each value is a `Normalizer` used to validate that
         property.
-    additional_properties : Serializer | bool | None, default None
+    additional_properties : Normalizer | bool | None, default None
         A schema that will be used to validate any properties in the instance
         that are not matched by `properties` or `patternProperties`. Boolean
         values can be used to allow/disallow any additional properties.
@@ -190,10 +265,10 @@ class ObjectSerializer(Serializer):
 
     type: str = field(default='object', init=False)
 
-    properties: Mapping[str, Serializer] | None = None
-    pattern_properties: Mapping[str | re.Pattern, Serializer] | None = None
-    property_names: Serializer | None = None
-    additional_properties: Serializer | bool | None = None
+    properties: Mapping[str, Normalizer] | None = None
+    pattern_properties: Mapping[str | re.Pattern, Normalizer] | None = None
+    property_names: Normalizer | None = None
+    additional_properties: Normalizer | bool | None = None
     required: Iterable[str] | None = None
     required_pattern_properties: Iterable[str] | None = None
     max_properties: int | None = None
@@ -207,22 +282,22 @@ class ObjectSerializer(Serializer):
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class ArraySerializer(Serializer):
-    """Serializer for sequence types.
+class ArrayNormalizer(Normalizer):
+    """Normalizer for sequence types.
 
     Attributes
     ----------
-    items : Serializer | bool | None, default None
+    items : Normalizer | bool | None, default None
         A single schema that will be used to validate all the items in the array.
         The empty array is always valid.
-    prefix_items : Sequence[Serializer] | None, default None
-        An array, where each item is a `Serializer` that corresponds to each
+    prefix_items : Sequence[Normalizer] | None, default None
+        An array, where each item is a `Normalizer` that corresponds to each
         index of the instance's array. Passing an empty array is equivalent to
         passing ``None``.
-    unevaluated_items : Serializer | None, default None
+    unevaluated_items : Normalizer | None, default None
         A schema that applies to any values not evaluated by the `items`,
         `prefix_items`, or `contains` keyword.
-    contains : Serializer | None, default None
+    contains : Normalizer | None, default None
         A schema that only needs to validate against one or more items in the
         array.
     max_contains : int | None, default None
@@ -239,10 +314,10 @@ class ArraySerializer(Serializer):
 
     type: str = field(default='array', init=False)
 
-    items: Serializer | bool | None = None
-    prefix_items: Sequence[Serializer] | None = None
-    unevaluated_items: Serializer | None = None
-    contains: Serializer | None = None
+    items: Normalizer | bool | None = None
+    prefix_items: Sequence[Normalizer] | None = None
+    unevaluated_items: Normalizer | None = None
+    contains: Normalizer | None = None
     max_contains: int | None = None
     min_contains: int | None = None
     max_items: int | None = None
@@ -254,8 +329,8 @@ class ArraySerializer(Serializer):
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class StringSerializer(Serializer):
-    """Serializer for the string type.
+class StringNormalizer(Normalizer):
+    """Normalizer for the string type.
 
     Attributes
     ----------
@@ -277,8 +352,8 @@ class StringSerializer(Serializer):
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class IntegerSerializer(Serializer):
-    """Serializer for the integer type.
+class IntegerNormalizer(Normalizer):
+    """Normalizer for the integer type.
 
     Attributes
     ----------
@@ -305,8 +380,8 @@ class IntegerSerializer(Serializer):
 
 
 @dataclass(frozen=True, kw_only=True, repr=False)
-class NumberSerializer(Serializer):
-    """Serializer for numeric type, either integers or floating point numbers.
+class NumberNormalizer(Normalizer):
+    """Normalizer for numeric type, either integers or floating point numbers.
 
     Attributes
     ----------
@@ -333,22 +408,22 @@ class NumberSerializer(Serializer):
 
 
 @dataclass(frozen=True, repr=False, kw_only=False)
-class NullSerializer(Serializer):
-    """Serializer for null type"""
+class NullNormalizer(Normalizer):
+    """Normalizer for null type"""
 
     type: str = field(default='null', init=False)
 
 
 @dataclass(frozen=True, repr=False, kw_only=False)
-class BooleanSerializer(Serializer):
-    """Serializer for boolean type"""
+class BooleanNormalizer(Normalizer):
+    """Normalizer for boolean type"""
 
     type: str = field(default='boolean', init=False)
 
 
 @dataclass(frozen=True, repr=False, kw_only=True)
-class ConstSerializer(Serializer):
-    """Serializer for constant type
+class ConstNormalizer(Normalizer):
+    """Normalizer for constant type
 
     Attributes
     ----------
@@ -361,50 +436,59 @@ class ConstSerializer(Serializer):
 
 
 @dataclass(frozen=True, repr=False, kw_only=True)
-class AnySerializer(Serializer):
-    """Serializer for any type"""
+class AnyNormalizer(Normalizer):
+    """Normalizer for any type"""
 
     ...
 
 
 @dataclass(frozen=True, repr=False, kw_only=True)
-class TypeSerializer(Serializer):
-    """Serializer for data type keyword"""
+class TypeNormalizer(Normalizer):
+    """Normalizer for data type keyword"""
 
     type_: Type = field(kw_only=False)
 
 
 @dataclass(frozen=True, repr=False, kw_only=True)
-class AllOfSerializer(Serializer):
-    all_of: Iterable[Serializer] = field(kw_only=False)
+class AllOfNormalizer(Normalizer):
+    all_of: Iterable[Normalizer] = field(kw_only=False)
 
 
 @dataclass(frozen=True, repr=False, kw_only=True)
-class AnyOfSerializer(Serializer):
-    any_of: Iterable[Serializer] = field(kw_only=False)
+class AnyOfNormalizer(Normalizer):
+    any_of: Iterable[Normalizer] = field(kw_only=False)
 
 
 @dataclass(frozen=True, repr=False, kw_only=True)
-class OneOfSerializer(Serializer):
-    one_of: Iterable[Serializer] = field(kw_only=False)
+class OneOfNormalizer(Normalizer):
+    one_of: Iterable[Normalizer] = field(kw_only=False)
 
 
 @dataclass(frozen=True, repr=False, kw_only=True)
-class NotSerializer(Serializer):
-    not_: Serializer = field(kw_only=False)
+class NotNormalizer(Normalizer):
+    not_: Normalizer = field(kw_only=False)
 
 
 def _schema_factory(data: list[tuple[str, Any]]):
     """Custom dict_factory for dataclasses.asdict method."""
     return {
-        encode_keyword(k): encode_value(v) for k, v in data if v is not None
+        normalize_keyword(k): normalize_value(v)
+        for k, v in data
+        if v is not None
     }
 
 
-def _get_kwargs(obj: Serializer):
-    """Return the keyword arguments from a Serializer object."""
+def _get_kwargs(obj: Normalizer):
+    """Return the keyword arguments from a Normalizer object."""
     return {f.name: getattr(obj, f.name) for f in fields(obj) if f.init}
 
 
 def _is_container_empty(value: Container) -> bool:
     return not bool(value)
+
+
+def _snake_case_to_camel_case(string: str) -> str:
+    if '_' not in string:
+        return string
+    string = ''.join(word.title() for word in string.split('_'))
+    return string[0].lower() + string[1:]

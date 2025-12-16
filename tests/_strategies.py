@@ -1,7 +1,9 @@
 import hypothesis.strategies as st
 from xarray.testing import strategies as xrst
+
 import xarray_jsonschema as xrm
 import xarray_jsonschema.testing as xmst
+from xarray_jsonschema.dataset import DataVarsSchema
 
 
 @st.composite
@@ -115,30 +117,26 @@ def coords_schemas(draw: st.DrawFn) -> xrm.CoordsSchema:
     )
 
 
-#
-#
-# @st.composite
-# def dataset_schemas(draw: st.DrawFn):
-#     attrs = draw(attrs_schemas())
-#     coords = draw(coords_schemas())
-#     data_vars = draw(data_vars_schemas())
-#
-#     return xrm.DatasetSchema(
-#         attrs=attrs,
-#         coords=coords,
-#         data_vars=data_vars,
-#     )
-#
-#
-# @st.composite
-# def data_vars_schemas(draw: st.DrawFn) -> DataVarsSchema:
-#     data_vars = draw(
-#         st.dictionaries(keys=xrst.names(), values=data_array_schemas())
-#     )
-#     require_all_items = draw(st.booleans())
-#     allow_extra_items = draw(st.booleans())
-#     return xrm.DataVarsSchema(
-#         data_vars,
-#         require_all_items=require_all_items,
-#         allow_extra_items=allow_extra_items,
-#     )
+@st.composite
+def dataset_schemas(draw: st.DrawFn):
+    attrs = draw(attrs_schemas())
+    coords = draw(coords_schemas())
+    data_vars = draw(data_vars_schemas())
+
+    return xrm.DatasetSchema(
+        data_vars=data_vars,
+        coords=coords,
+        attrs=attrs,
+    )
+
+
+@st.composite
+def data_vars_schemas(draw: st.DrawFn) -> DataVarsSchema:
+    data_vars = draw(
+        st.dictionaries(keys=xrst.names(), values=data_array_schemas())
+    )
+    strict = draw(st.booleans())
+    return xrm.DataVarsSchema(
+        data_vars,
+        strict=strict,
+    )

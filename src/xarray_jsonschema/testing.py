@@ -1,11 +1,12 @@
+import re
 from collections.abc import Hashable, Mapping, Sequence
 from typing import TypeVar
 
 import hypothesis as hp
 import numpy as np
+import xarray as xr
 import xarray.testing.strategies as xrst
 from hypothesis import strategies as st
-
 
 REGEX_PATTERNS = [
     r'[A-Za-z]{3,10}',  # Letters only, 3-10 chars
@@ -101,7 +102,7 @@ def nested_attrs(
 
 
 @st.composite
-def attrs(
+def attributes(
     draw: st.DrawFn, min_items: int = 0
 ) -> dict[str, None | bool | float | int | str]:
     return draw(
@@ -124,38 +125,25 @@ def supported_dtype_likes(
     If a dtype is provided, then only those values that are compatible with
     the dtype will be returned.
     """
-    if dtype is not None:
-        return draw(
-            st.sampled_from(
-                [
-                    # dtype
-                    dtype,
-                    # string
-                    dtype.name,
-                    # array-protocol typestring
-                    dtype.str,
-                    # One-character strings
-                    dtype.char,
-                ],
-            )
+    if dtype is None:
+        _dtype_strategy = st.one_of(
+            st.none(),
+            xrst.supported_dtypes(),
+            st.sampled_from([int, float, bool, str, complex]),
         )
-    _dtype_strategy = xrst.supported_dtypes()
+        dtype = np.dtype(draw(_dtype_strategy))
+
     return draw(
         st.sampled_from(
             [
-                draw(st.none()),
                 # dtype
-                draw(_dtype_strategy),
+                dtype,
                 # string
-                draw(_dtype_strategy).name,
+                dtype.name,
                 # array-protocol typestring
-                draw(_dtype_strategy).str,
+                dtype.str,
                 # One-character strings
-                draw(_dtype_strategy).char,
-                # Built-in types
-                draw(
-                    st.sampled_from([int, float, bool, str, complex]),
-                ),
+                dtype.char,
             ],
         )
     )
@@ -187,6 +175,7 @@ def dimension_shapes(
     min_side: int = 0,
     max_side: int | None = None,
 ) -> tuple[int, ...]:
+    """Generate an arbitrary tuple of dimension sizes."""
     return tuple(
         draw(
             xrst.dimension_sizes(
@@ -234,7 +223,7 @@ def _data_arrays(
         Sequence[Hashable] | Mapping[Hashable, int]
     ] = xrst.dimension_sizes(),
     dtype: st.SearchStrategy[np.dtype] = xrst.supported_dtypes(),
-    attrs: st.SearchStrategy[Mapping] = attrs(),
+    attrs: st.SearchStrategy[Mapping] = attributes(),
     name: st.SearchStrategy[Hashable] = xrst.names(),
 ) -> xr.DataArray:
     return xr.DataArray(
@@ -251,7 +240,7 @@ def data_arrays(
         Sequence[Hashable] | Mapping[Hashable, int]
     ] = xrst.dimension_sizes(),
     dtype: st.SearchStrategy[np.dtype] = xrst.supported_dtypes(),
-    attrs: st.SearchStrategy[Mapping] = attrs(),
+    attrs: st.SearchStrategy[Mapping] = attributes(),
     name: st.SearchStrategy[Hashable] = xrst.names(),
 ) -> xr.DataArray:
     """Generate an arbitrary DataArray.
@@ -259,12 +248,12 @@ def data_arrays(
     Each dimension of the array will be a dimension-coordinate.
     """
     da = draw(_data_arrays(dims=dims, dtype=dtype, attrs=attrs, name=name))
-    dim_coords = draw(coords(dims=st.just(da.sizes)))
+    dim_coords = draw(coordinates(dims=st.just(da.sizes)))
     return da.assign_coords(dim_coords)
 
 
 @st.composite
-def coords(
+def coordinates(
     draw: st.DrawFn,
     *,
     dims: st.SearchStrategy[Mapping[Hashable, int]] = xrst.dimension_sizes(),
@@ -276,3 +265,37 @@ def coords(
         )
         for name, size in draw(dims).items()
     }
+
+
+@st.composite
+def data_variables(
+    draw: st.DrawFn,
+    *,
+    dims: st.SearchStrategy[Mapping[Hashable, int]] = xrst.dimension_sizes(),
+) -> dict[Hashable, xr.DataArray]:
+    """Generate a mapping of data variable names to DataArrays."""
+    return {
+        name: draw(
+            _data_arrays(dims=st.just({name: size}), name=st.just(name))
+        )
+        for name, size in draw(dims).items()
+    }
+
+
+@st.composite
+def datasets(
+    draw: st.DrawFn,
+    *,
+    data_vars: st.SearchStrategy[Mapping[Hashable, xr.DataArray]]
+    | None = None,
+    coords: st.SearchStrategy[Mapping[Hashable, xr.DataArray]] | None = None,
+    attrs: st.SearchStrategy[Mapping] = attributes(),
+) -> xr.Dataset:
+    """Generate an arbitrary Dataset."""
+    if data_vars is None and coords is None:
+        return xr.Dataset(data_vars=draw(data_variables()), attrs=draw(attrs))
+    return xr.Dataset(
+        data_vars=draw(data_variables),
+        coords=draw(coordinates),
+        attrs=draw(attrs),
+    )

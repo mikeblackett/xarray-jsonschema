@@ -196,11 +196,15 @@ class AttrSchema(XarraySchema):
             case str():
                 return ConstSerializer(self.value)
             case Mapping():
-                # TODO: (mike) Implement nested dict validation
-                raise NotImplementedError()
+                return AttrsSchema(self.value).serializer
             case Sequence():
-                # TODO: (mike) Implement array validation
-                raise NotImplementedError()
+                prefix_items = [
+                    TypeSerializer(v)
+                    if isinstance(v, type)
+                    else ConstSerializer(v)
+                    for v in self.value
+                ]
+                return ArraySerializer(prefix_items=prefix_items)
             case _:
                 return ConstSerializer(encode_value(self.value))
 

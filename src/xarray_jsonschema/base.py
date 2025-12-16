@@ -1,12 +1,12 @@
 import inspect
 import json
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar, Generic, Self
 
-import xarray as xr
 from jsonschema.protocols import Validator
+from xarray.core.types import T_Xarray
 
 from xarray_jsonschema.serializers import Serializer
 from xarray_jsonschema.validator import XarrayValidator
@@ -14,7 +14,7 @@ from xarray_jsonschema.validator import XarrayValidator
 __all__ = ['XarraySchema']
 
 
-class XarraySchema[T: (xr.DataArray, xr.Dataset)](ABC):
+class XarraySchema(ABC, Generic[T_Xarray]):
     """Abstract base class for xarray schema components."""
 
     _validator: ClassVar = XarrayValidator
@@ -40,12 +40,12 @@ class XarraySchema[T: (xr.DataArray, xr.Dataset)](ABC):
         self.title = title
         self.description = description
 
-    def __call__(self, obj: T) -> None:
+    def __call__(self, obj: T_Xarray) -> None:
         """Validate an instance against this schema."""
         return self.validate(obj)
 
     @abstractmethod
-    def validate(self, obj: T) -> None:
+    def validate(self, obj: T_Xarray) -> None:
         """Validate an instance against this schema."""
         raise NotImplementedError  # pragma: no cover
 

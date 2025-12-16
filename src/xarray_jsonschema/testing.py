@@ -1,6 +1,6 @@
 from collections.abc import Hashable, Mapping, Sequence
-import re
-import xarray as xr
+from typing import TypeVar
+
 import hypothesis as hp
 import numpy as np
 import xarray.testing.strategies as xrst
@@ -55,7 +55,10 @@ def non_negative_integers(draw: st.DrawFn):
     return draw(st.integers(min_value=0))
 
 
-def dimension_names[T: Hashable](
+T = TypeVar('T', bound=Hashable)
+
+
+def dimension_name(
     *,
     name_strategy: st.SearchStrategy[T] = xrst.names(),
     min_dims: int = 0,

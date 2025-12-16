@@ -12,8 +12,8 @@ from jsonschema import ValidationError
 from xarray_jsonschema import AttrSchema, AttrsSchema
 from xarray_jsonschema.testing import (
     attrs,
-    patterns,
     data_arrays,
+    patterns,
 )
 
 

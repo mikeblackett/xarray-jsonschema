@@ -102,7 +102,7 @@ def nested_attrs(
 
 
 @st.composite
-def attributes(
+def attrs(
     draw: st.DrawFn, min_items: int = 0
 ) -> dict[str, None | bool | float | int | str]:
     return draw(
@@ -223,7 +223,7 @@ def _data_arrays(
         Sequence[Hashable] | Mapping[Hashable, int]
     ] = xrst.dimension_sizes(),
     dtype: st.SearchStrategy[np.dtype] = xrst.supported_dtypes(),
-    attrs: st.SearchStrategy[Mapping] = attributes(),
+    attrs: st.SearchStrategy[Mapping] = attrs(),
     name: st.SearchStrategy[Hashable] = xrst.names(),
 ) -> xr.DataArray:
     return xr.DataArray(
@@ -240,7 +240,7 @@ def data_arrays(
         Sequence[Hashable] | Mapping[Hashable, int]
     ] = xrst.dimension_sizes(),
     dtype: st.SearchStrategy[np.dtype] = xrst.supported_dtypes(),
-    attrs: st.SearchStrategy[Mapping] = attributes(),
+    attrs: st.SearchStrategy[Mapping] = attrs(),
     name: st.SearchStrategy[Hashable] = xrst.names(),
 ) -> xr.DataArray:
     """Generate an arbitrary DataArray.
@@ -289,7 +289,7 @@ def datasets(
     data_vars: st.SearchStrategy[Mapping[Hashable, xr.DataArray]]
     | None = None,
     coords: st.SearchStrategy[Mapping[Hashable, xr.DataArray]] | None = None,
-    attrs: st.SearchStrategy[Mapping] = attributes(),
+    attrs: st.SearchStrategy[Mapping] = attrs(),
 ) -> xr.Dataset:
     """Generate an arbitrary Dataset."""
     if data_vars is None and coords is None:

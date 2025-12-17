@@ -65,7 +65,7 @@ class XarraySchema(ABC, Generic[T_Xarray]):
         """The ``Normalizer`` instance for this schema."""
         raise NotImplementedError  # pragma: no cover
 
-    @property
+    @cached_property
     def json(self) -> dict[str, Any]:
         """The JSON schema for this object."""
         return self.normalizer.schema

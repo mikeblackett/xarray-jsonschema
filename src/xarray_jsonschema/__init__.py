@@ -2,9 +2,14 @@
 
 from xarray_jsonschema._version import version as __version__
 from xarray_jsonschema.base import XarraySchema
-from xarray_jsonschema.components import (
+from xarray_jsonschema.exceptions import SchemaError, ValidationError
+from xarray_jsonschema.schema import (
     AttrSchema,
     AttrsSchema,
+    CoordsSchema,
+    DataArraySchema,
+    DatasetSchema,
+    DataVarsSchema,
     # ChunksSchema,
     DimsSchema,
     DTypeSchema,
@@ -12,13 +17,6 @@ from xarray_jsonschema.components import (
     ShapeSchema,
     SizeSchema,
 )
-from xarray_jsonschema.containers import (
-    CoordsSchema,
-    DataArraySchema,
-    DatasetSchema,
-    DataVarsSchema,
-)
-from xarray_jsonschema.exceptions import SchemaError, ValidationError
 
 __all__ = [
     '__version__',

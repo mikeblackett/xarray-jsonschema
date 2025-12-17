@@ -195,7 +195,7 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
         data_vars: Mapping[str, DataArraySchema]
         | DataVarsSchema
         | None = None,
-        dims: DimsSchema | None = None,
+        dims: DimsSchema | Sequence[str | NameSchema | None] | None = None,
         attrs: Mapping[str, AttrSchema | object] | AttrsSchema | None = None,
         title: str | None = None,
         description: str | None = None,
@@ -207,6 +207,7 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
             data_vars=(
                 DataVarsSchema.from_python(data_vars) if data_vars else None
             ),
+            dims=DimsSchema.from_python(dims),
         )
 
     @cached_property

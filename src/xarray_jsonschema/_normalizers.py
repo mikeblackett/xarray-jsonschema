@@ -3,7 +3,7 @@ from abc import ABC
 from collections.abc import Container, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, fields
 from enum import EnumType, IntEnum, StrEnum
-from functools import singledispatch
+from functools import cached_property, singledispatch
 from re import Pattern
 from types import NoneType
 from typing import Any, Type
@@ -156,7 +156,8 @@ class Normalizer(ABC):
     description: str | None = None
     comment: str | None = None
 
-    def normalize(self) -> dict[str, Any]:
+    @cached_property
+    def schema(self) -> dict[str, Any]:
         """Return the fields of this instance as a JSON Schema"""
         return as_schema(self)
 

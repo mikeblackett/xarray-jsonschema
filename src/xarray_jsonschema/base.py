@@ -20,6 +20,10 @@ class XarraySchema(ABC, Generic[T_Xarray]):
 
     _validator: ClassVar = XarrayValidator
 
+    key: str | None
+    title: str | None
+    description: str | None
+
     def __init__(
         self,
         key: str | None = None,
@@ -37,13 +41,18 @@ class XarraySchema(ABC, Generic[T_Xarray]):
         description : str | None, default None
             An arbitrary textual description of the schema.
         """
-        self.key = key
-        self.title = title
-        self.description = description
+        self._set(key=key, title=title, description=description)
 
     def __call__(self, obj: T_Xarray) -> None:
         """Validate an instance against this schema."""
         return self.validate(obj)
+
+    def __setattr__(self, name, value):
+        raise AttributeError(f'{self.__class__.__name__} is immutable')
+
+    def _set(self, **kwargs: Any) -> None:
+        for key, value in kwargs.items():
+            object.__setattr__(self, key, value)
 
     @abstractmethod
     def validate(self, obj: T_Xarray) -> None:
@@ -94,7 +103,7 @@ class XarraySchema(ABC, Generic[T_Xarray]):
     def _validate(self, instance: Any) -> None:
         """A simple wrapper around ``jsonschema.Validator.validate``
 
-        Subclass should call this method in their ``validate`` method.
+        Subclasses should call this method in their ``validate`` method.
         """
         return self.validator.validate(instance=instance)
 
@@ -128,8 +137,8 @@ def fields(obj: XarraySchema) -> tuple['Field', ...]:
 
     Originally I (mike) wanted to use dataclasses for XarraySchema. But
     performing parameter type conversions in `__post_init__` caused too many
-    type issues, so I refactored to use normal Python classes. This `_fields`
-    property and the associated `Fields` dataclass are very rudimentary
+    type issues, so I refactored to use normal Python classes. This `fields`
+    and the associated `Fields` dataclass are very rudimentary
     implementations of the similarly named features from the standard
     library dataclasses. Their purpose is to gather parameter names, values
      and default values, nothing more.

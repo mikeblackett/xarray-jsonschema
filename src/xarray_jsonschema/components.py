@@ -42,6 +42,11 @@ class NameSchema(XarraySchema[xr.DataArray]):
 
     # TODO: (mike) Add support for Hashable names
 
+    name: str | Iterable[str] | None
+    regex: bool
+    min_length: int | None
+    max_length: int | None
+
     def __init__(
         self,
         name: str | Iterable[str] | None = None,
@@ -66,10 +71,12 @@ class NameSchema(XarraySchema[xr.DataArray]):
             Non-negative integer specifying the maximum length of the name.
         """
         super().__init__()
-        self.name = name
-        self.regex = regex
-        self.min_length = min_length
-        self.max_length = max_length
+        self._set(
+            name=name,
+            regex=regex,
+            min_length=min_length,
+            max_length=max_length,
+        )
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -129,6 +136,11 @@ class DimsSchema(XarraySchema[xr.DataArray]):
 
     # TODO: (mike) Add support for Hashable dimension names
 
+    dims: list[NameSchema]
+    contains: NameSchema | None
+    min_dims: int | None
+    max_dims: int | None
+
     def __init__(
         self,
         dims: Sequence[str | NameSchema | None] | None = None,
@@ -138,10 +150,13 @@ class DimsSchema(XarraySchema[xr.DataArray]):
         max_dims: int | None = None,
     ) -> None:
         super().__init__()
-        self.dims = [NameSchema.from_python(dim) for dim in dims or []]
-        self.min_dims = len(self.dims) if min_dims is None else min_dims
-        self.max_dims = max_dims
-        self.contains = NameSchema.from_python(contains) if contains else None
+        _dims = [NameSchema.from_python(dim) for dim in dims or []]
+        self._set(
+            dims=_dims,
+            min_dims=len(_dims) if min_dims is None else min_dims,
+            max_dims=max_dims,
+            contains=NameSchema.from_python(contains) if contains else None,
+        )
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -173,6 +188,10 @@ class AttrSchema(XarraySchema):
         A boolean flag indicating that the attribute is required.
     """
 
+    value: Any
+    regex: bool
+    required: bool
+
     def __init__(
         self,
         value: Any = None,
@@ -181,9 +200,7 @@ class AttrSchema(XarraySchema):
         required: bool = True,
     ) -> None:
         super().__init__()
-        self.value = value
-        self.regex = regex
-        self.required = required
+        self._set(value=value, regex=regex, required=required)
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -230,22 +247,27 @@ class AttrsSchema(XarraySchema):
     AttrSchema
     """
 
+    attrs: Mapping[str, AttrSchema]
+    strict: bool
+
     def __init__(
         self,
         attrs: Mapping[str, Any] | None = None,
         *,
         strict: bool = False,
     ) -> None:
-        self.attrs = (
-            {
-                key: AttrSchema.from_python(value)
-                for key, value in attrs.items()
-            }
-            if attrs
-            else {}
-        )
-        self.strict = strict
         super().__init__()
+        self._set(
+            attrs=(
+                {
+                    key: AttrSchema.from_python(value)
+                    for key, value in attrs.items()
+                }
+                if attrs
+                else {}
+            ),
+            strict=strict,
+        )
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -266,9 +288,11 @@ class DTypeSchema(XarraySchema[xr.DataArray]):
         accepted by ``numpy.dtype``.
     """
 
+    dtype: np.dtype
+
     def __init__(self, dtype: DTypeLike) -> None:
         super().__init__()
-        self.dtype = np.dtype(dtype)
+        self._set(dtype=np.dtype(dtype))
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -295,6 +319,10 @@ class SizeSchema(XarraySchema[xr.DataArray]):
         A non-negative integer specifying the minimum size of the dimension.
     """
 
+    size: int | None
+    maximum: int | None
+    minimum: int | None
+
     def __init__(
         self,
         size: int | None = None,
@@ -303,9 +331,7 @@ class SizeSchema(XarraySchema[xr.DataArray]):
         minimum: int | None = None,
     ) -> None:
         super().__init__()
-        self.size = size
-        self.maximum = maximum
-        self.minimum = minimum
+        self._set(size=size, maximum=maximum, minimum=minimum)
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -340,6 +366,10 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
         Maximum expected number of dimensions i.e., the maximum sequence length.
     """
 
+    shape: Sequence[int | SizeSchema] | None
+    min_dims: int | None
+    max_dims: int | None
+
     def __init__(
         self,
         shape: Sequence[int | SizeSchema] | None = None,
@@ -348,11 +378,15 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
         max_dims: int | None = None,
     ) -> None:
         super().__init__()
-        self.shape = (
-            [SizeSchema.from_python(size) for size in shape] if shape else None
+        self._set(
+            shape=(
+                [SizeSchema.from_python(size) for size in shape]
+                if shape
+                else None
+            ),
+            min_dims=min_dims,
+            max_dims=max_dims,
         )
-        self.min_dims = min_dims
-        self.max_dims = max_dims
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -467,7 +501,7 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
 #         super().__init__()
 #         self.chunks = chunks
 #
-#     @cached_property
+#     @property
 #     def normalizer(self) -> Normalizer:
 #         match self.chunks:
 #             case None:

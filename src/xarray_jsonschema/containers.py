@@ -21,14 +21,16 @@ from xarray_jsonschema.components import (
 class CoordsSchema(XarraySchema[xr.DataArray]):
     """Validate the coordinates of a ``xarray.DataArray``."""
 
+    coords: Mapping[str, 'DataArraySchema']
+    strict: bool
+
     def __init__(
         self,
         coords: Mapping[str, 'DataArraySchema'] | None = None,
         strict: bool = False,
     ) -> None:
         super().__init__()
-        self.coords = {} if coords is None else coords
-        self.strict = strict
+        self._set(coords={} if coords is None else coords, strict=strict)
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -65,6 +67,15 @@ class DataArraySchema(XarraySchema[xr.DataArray]):
         'name',
     )
 
+    dims: DimsSchema | None
+    attrs: AttrsSchema | None
+    dtype: DTypeSchema | None
+    shape: ShapeSchema | None
+    coords: CoordsSchema | None
+    name: NameSchema | None
+    regex: bool
+    required: bool
+
     def __init__(
         self,
         *,
@@ -79,16 +90,17 @@ class DataArraySchema(XarraySchema[xr.DataArray]):
         title: str | None = None,
         description: str | None = None,
     ) -> None:
-        self.dims = DimsSchema.from_python(dims) if dims else None
-        self.attrs = AttrsSchema.from_python(attrs) if attrs else None
-        self.dtype = DTypeSchema.from_python(dtype) if dtype else None
-        self.shape = ShapeSchema.from_python(shape) if shape else None
-        self.coords = CoordsSchema.from_python(coords) if coords else None
-        self.name = NameSchema.from_python(name) if name else None
-        self.regex = regex
-        self.required = required
-
         super().__init__(title=title, description=description)
+        self._set(
+            dims=DimsSchema.from_python(dims) if dims else None,
+            attrs=AttrsSchema.from_python(attrs) if attrs else None,
+            dtype=DTypeSchema.from_python(dtype) if dtype else None,
+            shape=ShapeSchema.from_python(shape) if shape else None,
+            coords=CoordsSchema.from_python(coords) if coords else None,
+            name=NameSchema.from_python(name) if name else None,
+            regex=regex,
+            required=required,
+        )
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -122,14 +134,19 @@ class DataArraySchema(XarraySchema[xr.DataArray]):
 class DataVarsSchema(XarraySchema[xr.Dataset]):
     """Validate the data variables of a ``xarray.Dataset``."""
 
+    data_vars: Mapping[str, DataArraySchema]
+    strict: bool
+
     def __init__(
         self,
         data_vars: Mapping[str, DataArraySchema] | None = None,
         strict: bool = False,
     ) -> None:
         super().__init__()
-        self.data_vars = {} if data_vars is None else data_vars
-        self.strict = strict
+        self._set(
+            data_vars={} if data_vars is None else data_vars,
+            strict=strict,
+        )
 
     @cached_property
     def normalizer(self) -> Normalizer:
@@ -146,6 +163,7 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
     Parameters
     ----------
     data_vars : Mapping[str, DataArraySchema] | DataVarsSchema | None, default None
+    dims : DimsSchema | None = None
     coords : Mapping[str, DataArraySchema] | CoordsSchema | None, default None
     attrs : Mapping[str, AttrSchema | object] | AttrsSchema | None, default None
     title : str | None, default None
@@ -165,6 +183,10 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
         'attrs',
         'data_vars',
     )
+    data_vars: DataVarsSchema | None
+    dims: DimsSchema | None
+    attrs: AttrsSchema | None
+    coords: CoordsSchema | None
 
     def __init__(
         self,
@@ -173,17 +195,20 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
         data_vars: Mapping[str, DataArraySchema]
         | DataVarsSchema
         | None = None,
+        dims: DimsSchema | Sequence[str | NameSchema | None] | None = None,
         attrs: Mapping[str, AttrSchema | object] | AttrsSchema | None = None,
         title: str | None = None,
         description: str | None = None,
     ) -> None:
-        self.coords = CoordsSchema.from_python(coords) if coords else None
-        self.attrs = AttrsSchema.from_python(attrs) if attrs else None
-        self.data_vars = (
-            DataVarsSchema.from_python(data_vars) if data_vars else None
-        )
-
         super().__init__(title=title, description=description)
+        self._set(
+            coords=CoordsSchema.from_python(coords) if coords else None,
+            attrs=AttrsSchema.from_python(attrs) if attrs else None,
+            data_vars=(
+                DataVarsSchema.from_python(data_vars) if data_vars else None
+            ),
+            dims=DimsSchema.from_python(dims),
+        )
 
     @cached_property
     def normalizer(self) -> Normalizer:

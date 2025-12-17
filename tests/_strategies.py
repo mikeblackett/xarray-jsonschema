@@ -1,9 +1,9 @@
 import hypothesis.strategies as st
 from xarray.testing import strategies as xrst
 
-import xarray_jsonschema as xrm
+import xarray_jsonschema as xjs
 import xarray_jsonschema.testing as xmst
-from xarray_jsonschema.dataset import DataVarsSchema
+from xarray_jsonschema.containers import DataVarsSchema
 
 
 @st.composite
@@ -19,13 +19,13 @@ def attr_schemas(draw: st.DrawFn):
     )
     required = draw(st.booleans())
     regex = draw(st.booleans())
-    return xrm.AttrSchema(value, regex=regex, required=required)
+    return xjs.AttrSchema(value, regex=regex, required=required)
 
 
 @st.composite
 def attrs_schemas(draw: st.DrawFn):
     strict = draw(st.booleans())
-    return xrm.AttrsSchema(
+    return xjs.AttrsSchema(
         draw(
             st.dictionaries(
                 keys=xmst.readable_text(),
@@ -51,7 +51,7 @@ def attrs_schemas(draw: st.DrawFn):
 #             ),
 #         )
 #     )
-#     return xrm.ChunksSchema(chunks)
+#     return xjs.ChunksSchema(chunks)
 
 
 @st.composite
@@ -60,7 +60,7 @@ def dims_schemas(draw: st.DrawFn):
     contains = draw(st.one_of(st.none(), xrst.names()))
     max_dims = draw(st.one_of(st.none(), xmst.non_negative_integers()))
     min_dims = draw(st.one_of(st.none(), xmst.non_negative_integers()))
-    return xrm.DimsSchema(
+    return xjs.DimsSchema(
         dims, contains=contains, max_dims=max_dims, min_dims=min_dims
     )
 
@@ -68,7 +68,7 @@ def dims_schemas(draw: st.DrawFn):
 @st.composite
 def dtype_schemas(draw: st.DrawFn):
     dtype = draw(st.one_of(st.none(), xmst.supported_dtype_likes()))
-    return xrm.DTypeSchema(dtype)
+    return xjs.DTypeSchema(dtype)
 
 
 @st.composite
@@ -77,7 +77,7 @@ def name_schemas(draw: st.DrawFn):
     regex = draw(st.booleans())
     min_length = draw(st.one_of(st.none(), xmst.non_negative_integers()))
     max_length = draw(st.one_of(st.none(), xmst.non_negative_integers()))
-    return xrm.NameSchema(
+    return xjs.NameSchema(
         name, regex=regex, min_length=min_length, max_length=max_length
     )
 
@@ -87,7 +87,7 @@ def shape_schemas(draw: st.DrawFn):
     shape = draw(st.one_of(st.none(), xmst.dimension_shapes()))
     min_items = draw(st.one_of(st.none(), xmst.non_negative_integers()))
     max_items = draw(st.one_of(st.none(), xmst.non_negative_integers()))
-    return xrm.ShapeSchema(shape, min_dims=min_items, max_dims=max_items)
+    return xjs.ShapeSchema(shape, min_dims=min_items, max_dims=max_items)
 
 
 @st.composite
@@ -100,18 +100,18 @@ def data_array_schemas(draw: st.DrawFn):
     dtype = draw(dtype_schemas())
     shape = draw(shape_schemas())
 
-    return xrm.DataArraySchema(
+    return xjs.DataArraySchema(
         attrs=attrs, coords=coords, dims=dims, dtype=dtype, shape=shape
     )
 
 
 @st.composite
-def coords_schemas(draw: st.DrawFn) -> xrm.CoordsSchema:
+def coords_schemas(draw: st.DrawFn) -> xjs.CoordsSchema:
     coords = draw(
         st.dictionaries(keys=xrst.names(), values=data_array_schemas())
     )
     strict = draw(st.booleans())
-    return xrm.CoordsSchema(
+    return xjs.CoordsSchema(
         coords,
         strict=strict,
     )
@@ -123,7 +123,7 @@ def dataset_schemas(draw: st.DrawFn):
     coords = draw(coords_schemas())
     data_vars = draw(data_vars_schemas())
 
-    return xrm.DatasetSchema(
+    return xjs.DatasetSchema(
         data_vars=data_vars,
         coords=coords,
         attrs=attrs,
@@ -136,7 +136,7 @@ def data_vars_schemas(draw: st.DrawFn) -> DataVarsSchema:
         st.dictionaries(keys=xrst.names(), values=data_array_schemas())
     )
     strict = draw(st.booleans())
-    return xrm.DataVarsSchema(
+    return xjs.DataVarsSchema(
         data_vars,
         strict=strict,
     )

@@ -84,7 +84,7 @@ class NameSchema(XarraySchema[xr.DataArray]):
         )
 
     @cached_property
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         # TODO: (mike) support validating 'null' names?
         schema = StringNormalizer(
             min_length=self.min_length,
@@ -164,14 +164,14 @@ class DimsSchema(XarraySchema[xr.DataArray]):
         )
 
     @cached_property
-    def normalizer(self) -> Normalizer:
-        prefix_items = [name.normalizer for name in self.dims]
+    def _normalizer(self) -> Normalizer:
+        prefix_items = [name._normalizer for name in self.dims]
         return ArrayNormalizer(
             items=False if prefix_items else StringNormalizer(),
             prefix_items=prefix_items,
             max_items=self.max_dims,
             min_items=self.min_dims,
-            contains=self.contains.normalizer if self.contains else None,
+            contains=self.contains._normalizer if self.contains else None,
         )
 
     def validate(self, obj: xr.DataArray) -> None:
@@ -208,7 +208,7 @@ class AttrSchema(XarraySchema):
         self._set(value=value, regex=regex, required=required)
 
     @cached_property
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         match self.value:
             case type():
                 return TypeNormalizer(self.value)
@@ -218,7 +218,7 @@ class AttrSchema(XarraySchema):
                 # Prevent str being caught by Sequence()
                 return ConstNormalizer(self.value)
             case Mapping():
-                return AttrsSchema(self.value).normalizer
+                return AttrsSchema(self.value)._normalizer
             case Sequence():
                 prefix_items = [
                     TypeNormalizer(v)
@@ -275,7 +275,7 @@ class AttrsSchema(XarraySchema):
         )
 
     @cached_property
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         return mapping_to_object_normalizer(self.attrs, strict=self.strict)
 
     def validate(self, obj: xr.DataArray | xr.Dataset) -> None:
@@ -300,7 +300,7 @@ class DTypeSchema(XarraySchema[xr.DataArray]):
         self._set(dtype=np.dtype(dtype))
 
     @cached_property
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         return ConstNormalizer(self.dtype)
 
     def validate(self, obj: xr.DataArray) -> None:
@@ -339,7 +339,7 @@ class SizeSchema(XarraySchema[xr.DataArray]):
         self._set(size=size, maximum=maximum, minimum=minimum)
 
     @cached_property
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         match self.size:
             case None:
                 return IntegerNormalizer(
@@ -394,7 +394,7 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
         )
 
     @cached_property
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         schema = ArrayNormalizer(
             items=IntegerNormalizer(),
             min_items=self.min_dims,
@@ -405,7 +405,7 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
                 pass
             case Sequence():
                 prefix_items = [
-                    SizeSchema.from_python(size).normalizer
+                    SizeSchema.from_python(size)._normalizer
                     for size in self.shape
                 ]
                 schema |= ArrayNormalizer(
@@ -438,7 +438,7 @@ class CoordsSchema(XarraySchema[xr.DataArray]):
         self._set(coords={} if coords is None else coords, strict=strict)
 
     @cached_property
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         return mapping_to_object_normalizer(self.coords, strict=self.strict)
 
     def validate(self, obj: xr.DataArray | xr.Dataset) -> None:
@@ -502,7 +502,7 @@ class DataArraySchema(XarraySchema[xr.DataArray]):
         )
 
     @cached_property
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         return ObjectNormalizer(
             title=self.title,
             description=self.description,
@@ -548,7 +548,7 @@ class DataVarsSchema(XarraySchema[xr.Dataset]):
         )
 
     @cached_property
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         return mapping_to_object_normalizer(self.data_vars, strict=self.strict)
 
     def validate(self, obj: xr.Dataset) -> None:
@@ -608,7 +608,7 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
         )
 
     @cached_property
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         return ObjectNormalizer(
             title=self.title,
             description=self.description,
@@ -648,7 +648,7 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
 #         self.size = size
 #
 #     @cached_property
-#     def normalizer(self) -> Normalizer:
+#     def _normalizer(self) -> Normalizer:
 #         match self.size:
 #             case -1:
 #                 # `-1` is a dask wildcard meaning "use the full dimension size."
@@ -720,7 +720,7 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
 #         self.chunks = chunks
 #
 #     @property
-#     def normalizer(self) -> Normalizer:
+#     def _normalizer(self) -> Normalizer:
 #         match self.chunks:
 #             case None:
 #                 return AnyNormalizer()

@@ -61,14 +61,14 @@ class XarraySchema(ABC, Generic[T_Xarray]):
 
     @cached_property
     @abstractmethod
-    def normalizer(self) -> Normalizer:
+    def _normalizer(self) -> Normalizer:
         """The ``Normalizer`` instance for this schema."""
         raise NotImplementedError  # pragma: no cover
 
     @cached_property
     def json(self) -> dict[str, Any]:
         """The JSON schema for this object."""
-        return self.normalizer.schema
+        return self._normalizer.schema
 
     @cached_property
     def validator(self) -> Validator:
@@ -171,9 +171,9 @@ def mapping_to_object_normalizer(
     required_pattern_properties = set()
     for key, schema in data.items():
         if getattr(schema, 'regex', False):
-            pattern_properties[key] = schema.normalizer
+            pattern_properties[key] = schema._normalizer
         else:
-            properties[key] = schema.normalizer
+            properties[key] = schema._normalizer
             if getattr(schema, 'required', False):
                 required.add(key)
     return ObjectNormalizer(

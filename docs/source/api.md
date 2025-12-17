@@ -1,73 +1,91 @@
+# API reference
+
+```{eval-rst}
 ..  currentmodule:: xarray_jsonschema
+```
 
-..  _api:
+## Base schema
 
-#############
-API reference
-#############
+```{eval-rst}
+..  autosummary::
+    :toctree: generated/
 
-This page provides an auto-generated summary of xarray-jsonschema's public API.
+    XarraySchema
+```
 
-Schema components
-=================
+## Component schema
 
+```{eval-rst}
 ..  autosummary::
     :toctree: generated/
 
     AttrSchema
     AttrsSchema
     CoordsSchema
-    DTypeSchema
     DataVarsSchema
     DimsSchema
+    DTypeSchema
     NameSchema
     ShapeSchema
     SizeSchema
+```
 
-DataArraySchema
-===============
+## DataArraySchema
+
+```{eval-rst}
 ..  autosummary::
     :toctree: generated/
 
     DataArraySchema
+```
 
-Attributes
-----------
+### Attributes
+
+```{eval-rst}
 ..  autosummary::
     :toctree: generated/
 
     DataArraySchema.json
     DataArraySchema.validator
+```
 
-Methods
--------
+### Methods
+
+```{eval-rst}
 ..  autosummary::
     :toctree: generated/
 
     DataArraySchema.check_schema
     DataArraySchema.dumps
     DataArraySchema.validate
+```
 
-DatasetSchema
-=============
+## DatasetSchema
+
+```{eval-rst}
 ..  autosummary::
     :toctree: generated/
 
     DatasetSchema
+```
 
-Attributes
-----------
+### Attributes
+
+```{eval-rst}
 ..  autosummary::
     :toctree: generated/
 
     DatasetSchema.json
     DatasetSchema.validator
+```
 
-Methods
--------
+### Methods
+
+```{eval-rst}
 ..  autosummary::
     :toctree: generated/
 
     DatasetSchema.check_schema
     DatasetSchema.dumps
     DatasetSchema.validate
+```

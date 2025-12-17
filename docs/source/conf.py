@@ -1,6 +1,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import os
+
 import xarray_jsonschema
 
 project = 'xarray-jsonschema'
@@ -20,6 +21,9 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
+    # 3rd party
+    'myst_nb',
+    'sphinx_copybutton',
 ]
 
 # AutoDoc configuration
@@ -35,7 +39,6 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 intersphinx_mapping = {
     'dask': ('https://docs.dask.org/en/latest', None),
-    'hypothesis': ('https://hypothesis.readthedocs.io/en/latest/', None),
     'jsonschema': (
         'https://python-jsonschema.readthedocs.io/en/stable/',
         None,
@@ -48,7 +51,7 @@ intersphinx_mapping = {
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 html_baseurl = os.environ.get('READTHEDOCS_CANONICAL_URL', '/')
-html_theme = 'pydata_sphinx_theme'
+html_theme = 'sphinx_book_theme'
 html_title = 'xarray-jsonschema'
 html_context = {
     'github_user': 'mikeblackett',
@@ -62,4 +65,20 @@ html_theme_options = {
     'header_links_before_dropdown': 8,
     'navbar_align': 'left',
     'footer_center': ['last-updated'],
+}
+templates_path = ['_templates']
+
+# MyST configuration
+myst_enable_extensions = [
+    'attrs_inline',
+    'colon_fence',
+    'deflist',
+    'substitution',
+    'tasklist',
+]
+myst_heading_anchors = 3
+myst_substitutions = {
+    'project': project,
+    'version': version,
+    'release': release,
 }

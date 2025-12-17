@@ -187,9 +187,6 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
     dims: DimsSchema | None
     attrs: AttrsSchema | None
     coords: CoordsSchema | None
-    name: NameSchema | None
-    regex: bool
-    required: bool
 
     def __init__(
         self,

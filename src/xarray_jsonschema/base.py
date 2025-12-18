@@ -6,13 +6,16 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import Any, ClassVar, Generic, Self
 
+from jsonschema.exceptions import SchemaError, ValidationError
 from jsonschema.protocols import Validator
 from xarray.core.types import T_Xarray
 
 from xarray_jsonschema._normalizers import Normalizer, ObjectNormalizer
 from xarray_jsonschema.validator import XarrayValidator
 
-__all__ = ['XarraySchema']
+__all__ = ['XarraySchema', 'ValidationError', 'SchemaError']
+
+# TODO: (mike) extend jsonschema exceptions.
 
 
 class XarraySchema(Generic[T_Xarray], ABC):

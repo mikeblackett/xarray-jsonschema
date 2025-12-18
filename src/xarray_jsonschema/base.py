@@ -19,7 +19,7 @@ __all__ = ['XarraySchema', 'ValidationError', 'SchemaError']
 
 
 class XarraySchema(Generic[T_Xarray], ABC):
-    """Abstract base class for xarray schema objects.
+    """Abstract base class for xarray jsonschema objects.
 
     An ``XarraySchema`` normalizes its attributes to a JSON Schema compatible
     schema object which can be used to validate xarray objects.

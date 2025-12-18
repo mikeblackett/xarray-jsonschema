@@ -4,7 +4,7 @@
 ..  currentmodule:: xarray_jsonschema
 ```
 
-## Base schema
+## Base Schema
 
 ```{eval-rst}
 ..  autosummary::
@@ -13,7 +13,28 @@
     XarraySchema
 ```
 
-## Component schema
+### Attributes
+
+```{eval-rst}
+..  autosummary::
+    :toctree: generated/
+
+    XarraySchema.json
+    XarraySchema.validator
+```
+
+### Methods
+
+```{eval-rst}
+..  autosummary::
+    :toctree: generated/
+
+    XarraySchema.check_schema
+    XarraySchema.dumps
+    XarraySchema.validate
+```
+
+## Schemas
 
 ```{eval-rst}
 ..  autosummary::
@@ -22,70 +43,12 @@
     AttrSchema
     AttrsSchema
     CoordsSchema
+    DataArraySchema
+    DatasetSchema
     DataVarsSchema
     DimsSchema
     DTypeSchema
     NameSchema
     ShapeSchema
     SizeSchema
-```
-
-## DataArraySchema
-
-```{eval-rst}
-..  autosummary::
-    :toctree: generated/
-
-    DataArraySchema
-```
-
-### Attributes
-
-```{eval-rst}
-..  autosummary::
-    :toctree: generated/
-
-    DataArraySchema.json
-    DataArraySchema.validator
-```
-
-### Methods
-
-```{eval-rst}
-..  autosummary::
-    :toctree: generated/
-
-    DataArraySchema.check_schema
-    DataArraySchema.dumps
-    DataArraySchema.validate
-```
-
-## DatasetSchema
-
-```{eval-rst}
-..  autosummary::
-    :toctree: generated/
-
-    DatasetSchema
-```
-
-### Attributes
-
-```{eval-rst}
-..  autosummary::
-    :toctree: generated/
-
-    DatasetSchema.json
-    DatasetSchema.validator
-```
-
-### Methods
-
-```{eval-rst}
-..  autosummary::
-    :toctree: generated/
-
-    DatasetSchema.check_schema
-    DatasetSchema.dumps
-    DatasetSchema.validate
 ```

@@ -235,7 +235,7 @@ class AttrsSchema(XarraySchema):
     attrs : Mapping[str, AttrSchema | Any]
         A mapping of attribute names to expected values.
     strict : bool, default True
-        A boolean flag indicating whether extra items are allowed.
+        If `True`, extra items are not allowed.
 
     See Also
     --------

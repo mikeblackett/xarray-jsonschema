@@ -46,25 +46,19 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/doc/stable/', None),
     'python': ('https://docs.python.org/3', None),
     'xarray': ('https://docs.xarray.dev/en/stable/', None),
+    'xarray-schema': ('https://xarray-schema.readthedocs.io/en/latest/', None),
 }
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 html_baseurl = os.environ.get('READTHEDOCS_CANONICAL_URL', '/')
-html_theme = 'sphinx_book_theme'
+html_theme = 'sphinx_rtd_theme'
 html_title = 'xarray-jsonschema'
 html_context = {
     'github_user': 'mikeblackett',
     'github_repo': 'xarray-jsonschema',
     'github_version': 'main',
     'doc_path': 'doc',
-}
-html_theme_options = {
-    'github_url': 'https://github.com/mikeblackett/xarray-jsonschema',
-    'use_edit_page_button': False,
-    'header_links_before_dropdown': 8,
-    'navbar_align': 'left',
-    'footer_center': ['last-updated'],
 }
 templates_path = ['_templates']
 

@@ -24,7 +24,6 @@ from xarray_jsonschema.base import XarraySchema, mapping_to_object_normalizer
 __all__ = [
     'AttrsSchema',
     'AttrSchema',
-    # 'ChunksSchema',
     'DTypeSchema',
     'DimsSchema',
     'NameSchema',
@@ -38,11 +37,19 @@ __all__ = [
 
 
 class NameSchema(XarraySchema[xr.DataArray]):
-    """Validate the name of a ``xarray.DataArray``.
+    """A validator for ``xarray`` object names.
 
-    Attributes
+    Parameters
     ----------
-
+    name : str | Iterable['str | NameSchema'] | None, default None
+        An expected value or iterable of expected values.
+    regex : bool, default False
+        A boolean flag indicating that the ``name`` parameter is a regex pattern.
+        If ``name`` is not a string, this parameter is silently ignored.
+    min_length : int, default None
+        A non-negative integer specifying the minimum length of the name.
+    max_length : int, default None
+        A non-negative integer specifying the maximum length of the name.
     """
 
     # TODO: (mike) Add support for Hashable names
@@ -60,21 +67,6 @@ class NameSchema(XarraySchema[xr.DataArray]):
         min_length: int | None = None,
         max_length: int | None = None,
     ) -> None:
-        """
-
-        Parameters
-        ----------
-        name : str | Iterable['str | NameSchema'] | None, default None
-            Expected value or iterable of acceptable values to match the name against.
-        regex : bool, default False
-            A boolean flag indicating that the ``name`` parameter should be treated
-            as a regex pattern. If the ``name`` is not a string, this parameter is
-            silently ignored.
-        min_length : int, default None
-            Non-negative integer specifying the minimum length of the name.
-        max_length : int, default None
-            Non-negative integer specifying the maximum length of the name.
-        """
         super().__init__()
         self._set(
             name=name,
@@ -111,27 +103,26 @@ class NameSchema(XarraySchema[xr.DataArray]):
 
 
 class DimsSchema(XarraySchema[xr.DataArray]):
-    """Validate the dimensions of a ``xarray.DataArray``.
+    """A validator for ``xarray`` object dimensions.
+
+    Parameters
+    ----------
+    dims : Sequence[str | NameSchema | None] | None, default None
+        A sequence of expected dimension names.
+        Order matters.
+        ``None`` will match any value.
+    contains : str | NameSchema | None, default None
+        A string or ``NameSchema`` object describing a required dimension.
+    max_dims : int | None, default None
+        The maximum number of dimensions.
+    min_dims : int | None, default None
+        The minimum number of dimensions.
 
     Notes
     -----
     This object validates the tuple of dimension names returned by
     :py:attr:`~xarray.DataArray.dims`, NOT the mapping of dimension names to
     sizes returned by :py:attr:`~xarray.Dataset.dims`.
-
-    Parameters
-    ----------
-    dims : Sequence[str | NameSchema | None] | None, default None
-        A sequence of expected names for the dimensions. The
-        names can either be strings or ``NameSchema`` objects for more
-        complex matching. Order matters.
-    contains : str | NameSchema | None, default None
-        A string or ``NameSchema`` object describing a name that must be included in the
-        dimensions.
-    max_dims : int | None, default None
-        The maximum number of dimensions.
-    min_dims : int | None, default None
-        The minimum number of dimensions.
 
     See Also
     --------
@@ -180,18 +171,20 @@ class DimsSchema(XarraySchema[xr.DataArray]):
 
 
 class AttrSchema(XarraySchema):
-    """Generate a JSON schema for attribute key-value pairs.
+    """A validator for ``xarray`` object attribute values.
 
     Parameters
     ----------
     value : Any | None, default None
-        The expected attribute value or type. The default value of ``None`` will
-        match any value.
+        The expected value or value type.
+        ``None`` will match any value.
     regex : bool, default False
-        A boolean flag indicating that the key for this attr should be treated as a regex pattern.
+        A boolean flag indicating that the key for this attr is a regex pattern.
     required: bool, default True
         A boolean flag indicating that the attribute is required.
     """
+
+    # TODO: Support enumerated values?
 
     value: Any
     regex: bool
@@ -235,17 +228,14 @@ class AttrSchema(XarraySchema):
 
 
 class AttrsSchema(XarraySchema):
-    """Validate the attributes of a ``xarray.DataArray``.
+    """A validator for ``xarray`` object attributes.
 
     Parameters
     ----------
-    attrs : Mapping[str, Any]
-        A mapping of attribute names to values. The values can be
-        ``AttrSchema`` instances for complex matching, or any other type for
-        simple matching.
+    attrs : Mapping[str, AttrSchema | Any]
+        A mapping of attribute names to expected values.
     strict : bool, default True
-        A boolean flag indicating whether items not described by the ``attrs``
-        parameter are allowed.
+        A boolean flag indicating whether extra items are allowed.
 
     See Also
     --------
@@ -257,7 +247,7 @@ class AttrsSchema(XarraySchema):
 
     def __init__(
         self,
-        attrs: Mapping[str, Any] | None = None,
+        attrs: Mapping[str, AttrSchema | Any] | None = None,
         *,
         strict: bool = False,
     ) -> None:
@@ -284,13 +274,13 @@ class AttrsSchema(XarraySchema):
 
 
 class DTypeSchema(XarraySchema[xr.DataArray]):
-    """Validate the dtype of a ``xarray.DataArray``.
+    """A validator for ``xarray`` object data types.
 
     Parameters
     ----------
     dtype : DTypeLike
-        The expected data type of the array. This can be any dtype-like value
-        accepted by ``numpy.dtype``.
+        The expected data type.
+        Can be any dtype-like value accepted by ``numpy.dtype``.
     """
 
     dtype: np.dtype
@@ -309,19 +299,17 @@ class DTypeSchema(XarraySchema[xr.DataArray]):
 
 
 class SizeSchema(XarraySchema[xr.DataArray]):
-    """Generate a JSON schema for ``xarray.DataArray`` dimension sizes.
+    """A validator for ``xarray` object`` object dimension sizes.
 
-    This model should be composed with the :py:class:`~xarray_jsonschema.ShapeSchema` schema.
-
-    Attributes
+    Parameters
     ----------
     size : int | None, default None
-        A non-negative integer specifying the expected size of the dimension.
+        A non-negative integer specifying the expected size.
         The default value of ``None`` will validate any size.
     maximum : int | None, default None
-        A non-negative integer specifying the maximum size of the dimension.
+        A non-negative integer specifying the maximum size.
     minimum : int | None, default None
-        A non-negative integer specifying the minimum size of the dimension.
+        A non-negative integer specifying the minimum size.
     """
 
     size: int | None
@@ -358,17 +346,18 @@ class SizeSchema(XarraySchema[xr.DataArray]):
 
 
 class ShapeSchema(XarraySchema[xr.DataArray]):
-    """Validate the shape of a ``xarray.DataArray``.
+    """A validator for ``xarray`` object shapes.
 
-    Attributes
+    Parameters
     ----------
     shape : Sequence[int | SizeSchema] | None, default None
-        Sequence of expected sizes for the dimensions of the array. The
-        default value of ``None`` will match any shape.
+        A sequence of expected sizes for the dimensions of the array.
+        Order matters.
+        ``None`` will match any shape.
     min_dims : int | None, default None
-        Minimum expected number of dimensions i.e., the minimum sequence length.
+        The minimum expected number of dimensions.
     max_dims : int | None, default None
-        Maximum expected number of dimensions i.e., the maximum sequence length.
+        The maximum expected number of dimensions.
     """
 
     shape: Sequence[int | SizeSchema] | None
@@ -424,7 +413,15 @@ class ShapeSchema(XarraySchema[xr.DataArray]):
 
 
 class CoordsSchema(XarraySchema[xr.DataArray]):
-    """Validate the coordinates of a ``xarray.DataArray``."""
+    """A validator for ``xarray`` object coordinates.
+
+    Parameters
+    ----------
+    coords : Mapping[str, 'DataArraySchema'] | None = None
+        A mapping of coordinate names to ``DataArraySchema`` objects.
+    strict : bool = False
+        A boolean flag indicating if extra coordinates are allowed.
+    """
 
     coords: Mapping[str, 'DataArraySchema']
     strict: bool
@@ -433,8 +430,11 @@ class CoordsSchema(XarraySchema[xr.DataArray]):
         self,
         coords: Mapping[str, 'DataArraySchema'] | None = None,
         strict: bool = False,
+        key: str | None = None,
+        title: str | None = None,
+        description: str | None = None,
     ) -> None:
-        super().__init__()
+        super().__init__(key=key, title=title, description=description)
         self._set(coords={} if coords is None else coords, strict=strict)
 
     @cached_property
@@ -447,20 +447,20 @@ class CoordsSchema(XarraySchema[xr.DataArray]):
 
 
 class DataArraySchema(XarraySchema[xr.DataArray]):
-    """Validate a ``xarray.DataArray``.
+    """A validator for ``xarray.DataArray`` objects.
 
     Parameters
     ----------
-    dims : Sequence[str | NameSchema] | DimsSchema | None, default None
-    attrs : Mapping[str, AttrSchema | object] | AttrsSchema | None, default None
-    dtype : DTypeLike | DTypeSchema | None, default None
-    shape : Sequence[int | SizeSchema] | ShapeSchema | None, default None
-    coords : Mapping[str, DataArraySchema] | CoordsSchema | None, default None
-    name : str | Iterable[str] | NameSchema | None, default None
-    regex : bool, default False
-    required : bool, default True
-    title : str | None, default None
-    description : str | None, default None
+    dims: Sequence[str | NameSchema] | DimsSchema | None = None
+        The expected dimensions of the array
+    attrs: Mapping[str, AttrSchema | object] | AttrsSchema | None = None
+        The expected attributes of the array
+    dtype: DTypeLike | DTypeSchema | None = None
+        The expected data type of the array
+    shape: Sequence[int | SizeSchema] | ShapeSchema | None = None
+        The expected shape of the array
+    coords: Mapping[str, 'DataArraySchema'] | CoordsSchema | None = None
+        The expected coordinates of the array
     """
 
     _components: ClassVar[tuple[str, ...]] = (
@@ -488,10 +488,8 @@ class DataArraySchema(XarraySchema[xr.DataArray]):
         shape: Sequence[int | SizeSchema] | ShapeSchema | None = None,
         coords: Mapping[str, 'DataArraySchema'] | CoordsSchema | None = None,
         name: str | Iterable[str] | NameSchema | None = None,
-        title: str | None = None,
-        description: str | None = None,
     ) -> None:
-        super().__init__(title=title, description=description)
+        super().__init__()
         self._set(
             dims=DimsSchema.from_python(dims) if dims else None,
             attrs=AttrsSchema.from_python(attrs) if attrs else None,
@@ -514,24 +512,20 @@ class DataArraySchema(XarraySchema[xr.DataArray]):
         )
 
     def validate(self, obj: xr.DataArray) -> None:
-        """Validate a data-array against this schema.
-
-        Parameters
-        ----------
-        obj : xr.DataArray
-            The data-array instance to validate.
-
-        Raises
-        ------
-        jsonschema.exceptions.ValidationError
-            If the data-array instance is invalid.
-        """
         instance = obj.to_dict(data=False)
         return super()._validate(instance=instance)
 
 
 class DataVarsSchema(XarraySchema[xr.Dataset]):
-    """Validate the data variables of a ``xarray.Dataset``."""
+    """A validator for ``xarray`` object data variables.
+
+    Parameters
+    ----------
+    data_vars : Mapping[str, DataArraySchema] | None = None
+        A mapping of variable names to ``DataArraySchema`` objects.
+    strict : bool = False
+        A boolean flag indicating if extra data variables are allowed.
+    """
 
     data_vars: Mapping[str, DataArraySchema]
     strict: bool
@@ -557,22 +551,18 @@ class DataVarsSchema(XarraySchema[xr.Dataset]):
 
 
 class DatasetSchema(XarraySchema[xr.Dataset]):
-    """Validate a ``xarray.Dataset``.
+    """A validator for ``xarray.Dataset`` objects.
 
     Parameters
     ----------
     data_vars : Mapping[str, DataArraySchema] | DataVarsSchema | None, default None
+        The expected data variables of this dataset.
     dims : DimsSchema | None = None
+        The expected dimensionss of this dataset.
     coords : Mapping[str, DataArraySchema] | CoordsSchema | None, default None
+         The expected coordinates of this dataset.
     attrs : Mapping[str, AttrSchema | object] | AttrsSchema | None, default None
-    title : str | None, default None
-    description : str | None, default None
-
-    Attributes
-    ----------
-    data_vars : DataVarsSchema
-
-
+         The expected attributes of this dataset.
     """
 
     _components: ClassVar[tuple[str, ...]] = (
@@ -580,6 +570,7 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
         'attrs',
         'data_vars',
     )
+
     data_vars: DataVarsSchema | None
     dims: DimsSchema | None
     attrs: AttrsSchema | None
@@ -594,10 +585,8 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
         | None = None,
         dims: DimsSchema | Sequence[str | NameSchema | None] | None = None,
         attrs: Mapping[str, AttrSchema | object] | AttrsSchema | None = None,
-        title: str | None = None,
-        description: str | None = None,
     ) -> None:
-        super().__init__(title=title, description=description)
+        super().__init__()
         self._set(
             coords=CoordsSchema.from_python(coords) if coords else None,
             attrs=AttrsSchema.from_python(attrs) if attrs else None,
@@ -620,18 +609,6 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
         )
 
     def validate(self, obj: xr.Dataset) -> None:
-        """Validate a ``Dataset`` against this schema.
-
-        Parameters
-        ----------
-        obj : xr.Dataset
-            The dataset instance to validate.
-
-        Raises
-        ------
-        jsonschema.exceptions.ValidationError
-            If the dataset instance is invalid.
-        """
         instance = obj.to_dict(data=False)
         return super()._validate(instance=instance)
 

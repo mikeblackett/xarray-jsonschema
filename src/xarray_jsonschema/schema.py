@@ -505,7 +505,7 @@ class DataArraySchema(XarraySchema[xr.DataArray]):
             title=self.title,
             description=self.description,
             properties={
-                key: getattr(self, key).normalizer
+                key: getattr(self, key)._normalizer
                 for key in self._components
                 if getattr(self, key) is not None
             },
@@ -602,7 +602,7 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
             title=self.title,
             description=self.description,
             properties={
-                key: getattr(self, key).normalizer
+                key: getattr(self, key)._normalizer
                 for key in self._components
                 if getattr(self, key) is not None
             },
@@ -709,11 +709,11 @@ class DatasetSchema(XarraySchema[xr.Dataset]):
 #                 return NullNormalizer()
 #             case int():
 #                 return ArrayNormalizer(
-#                     items=_ChunkSchema(self.chunks).normalizer
+#                     items=_ChunkSchema(self.chunks)._normalizer
 #                 )
 #             case Sequence():
 #                 prefix_items = [
-#                     _ChunkSchema(chunk).normalizer for chunk in self.chunks
+#                     _ChunkSchema(chunk)._normalizer for chunk in self.chunks
 #                 ]
 #                 return ArrayNormalizer(
 #                     prefix_items=prefix_items,

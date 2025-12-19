@@ -62,6 +62,16 @@ def _(value: str) -> str:
 
 
 @normalize_value.register
+def _(value: Mapping) -> dict:
+    return {k: normalize_value(v) for k, v in value.items()}
+
+
+@normalize_value.register
+def _(value: Iterable) -> list:
+    return list(normalize_value(v) for v in value)
+
+
+@normalize_value.register
 def _(value: Sequence) -> list:
     return list(normalize_value(v) for v in value)
 

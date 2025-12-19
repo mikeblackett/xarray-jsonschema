@@ -63,12 +63,12 @@ def _(value: str) -> str:
 
 @normalize_value.register
 def _(value: Sequence) -> list:
-    return list(value)
+    return list(normalize_value(v) for v in value)
 
 
 @normalize_value.register
 def _(value: set) -> list:
-    return list(value)
+    return list(normalize_value(v) for v in value)
 
 
 @normalize_value.register
@@ -83,7 +83,7 @@ def _(value: IntEnum) -> int:
 
 @normalize_value.register
 def _(value: EnumType) -> list:
-    return [member for member in value.__members__.values()]
+    return [normalize_value(v) for v in value.__members__.values()]
 
 
 @normalize_value.register

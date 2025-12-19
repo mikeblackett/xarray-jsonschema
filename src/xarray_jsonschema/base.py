@@ -154,7 +154,7 @@ class XarraySchema(Generic[T_Xarray], ABC):
         # Show only non-default arguments...
         args = [
             (f.name, f.value)
-            for f in fields(self)
+            for f in _fields(self)
             if f.value is not None and f.value is not f.default
         ]
         args_string = ', '.join(f'{name}={value}' for name, value in args)
@@ -162,26 +162,23 @@ class XarraySchema(Generic[T_Xarray], ABC):
 
 
 @dataclass
-class Field:
+class _Field:
     name: str
     default: Any
     value: Any
 
 
-def fields(obj: XarraySchema) -> tuple['Field', ...]:
-    """A tuple of ``Field`` instances for this schema.
+def _fields(obj: XarraySchema) -> tuple['_Field', ...]:
+    """Return a tuple of ``Field`` instances from a schema.
 
-    Originally I (mike) wanted to use dataclasses for XarraySchema. But
-    performing parameter type conversions in `__post_init__` caused too many
-    type issues, so I refactored to use normal Python classes. This `fields`
-    and the associated `Fields` dataclass are very rudimentary
+    This `fields` and the associated `Fields` dataclass are very rudimentary
     implementations of the similarly named features from the standard
-    library dataclasses. Their purpose is to gather parameter names, values
-     and default values, nothing more.
+    library dataclasses. Their purpose is to gather the names, values
+    and default values of init parameters.
     """
     signature = inspect.signature(obj.__init__)
     return tuple(
-        Field(name=k, default=v.default, value=getattr(obj, v.name))
+        _Field(name=k, default=v.default, value=getattr(obj, v.name))
         for k, v in signature.parameters.items()
         if v.default is not inspect.Parameter.empty
     )

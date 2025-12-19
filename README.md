@@ -36,4 +36,4 @@ Contributions are encouraged! Please feel free to submit a Pull Request.
 
 ## Next steps
 
-Check out the [Docs]((https://xarray-jsonschema.readthedocs.io/en/latest/).)
+Check out the [Docs](https://xarray-jsonschema.readthedocs.io/en/latest/)

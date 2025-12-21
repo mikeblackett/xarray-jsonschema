@@ -1,30 +1,32 @@
 import hypothesis as hp
+import hypothesis.extra.numpy as npst
+import hypothesis.strategies as st
 import xarray as xr
+import xarray.testing.strategies as xrst
 
-from tests._strategies import coords_schemas, data_array_schemas
-from xarray_jsonschema import CoordsSchema, DataArraySchema
-from xarray_jsonschema.testing import data_arrays
+from xarray_jsonschema import DataArrayModel
 
-
-class TestDataArraySchema:
-    @hp.given(model=data_array_schemas())
-    def test_schema_is_valid(self, model: DataArraySchema):
-        """Should always produce a valid JSON Schema with any combination of parameters."""
-        assert model.check_schema() is None
-
-    @hp.given(da=data_arrays())
-    def test_validation_with_default_parameters_passes(self, da: xr.DataArray):
-        """Should always pass with default values."""
-        DataArraySchema().validate(da)
+from .strategies import attrs, readable_text, supported_dtype_likes
 
 
-class TestCoordsModel:
-    @hp.given(model=coords_schemas())
-    def test_schema_is_valid(self, model: CoordsSchema):
-        """Should always produce a valid JSON Schema with any combination of parameters."""
-        assert model.check_schema() is None
+class TestDataArrayModel:
+    @hp.given(
+        attrs=st.one_of(attrs(), st.none()),
+        dims=st.one_of(xrst.dimension_names(), st.none()),
+        shape=st.one_of(npst.array_shapes(), st.none()),
+        name=st.one_of(readable_text(), st.none()),
+        dtype=st.one_of(supported_dtype_likes(), st.none()),
+    )
+    def test_generates_valid_schema(
+        self, dtype, name, shape, dims, attrs
+    ) -> None:
+        """Should produce valid JSON Model."""
+        schema = DataArrayModel(
+            dtype=dtype, name=name, shape=shape, dims=dims, attrs=attrs
+        )
+        assert schema.check_schema() is None
 
-    @hp.given(da=data_arrays())
-    def test_validation_with_default_parameters_passes(self, da: xr.DataArray):
-        """Should always pass with default values."""
-        CoordsSchema().validate(da)
+    def test_validation_with_default_parameters(self):
+        """Should validate any data array when instantiated with default values."""
+        da = xr.tutorial.open_dataset('air_temperature').air
+        DataArrayModel().validate(da)

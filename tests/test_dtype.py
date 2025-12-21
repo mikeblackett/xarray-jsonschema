@@ -1,38 +1,53 @@
 import hypothesis as hp
 import numpy as np
 import pytest as pt
-from hypothesis import strategies as st
-from jsonschema import ValidationError
-from numpy.typing import DTypeLike
 
-import xarray_jsonschema.testing as xmst
-from xarray_jsonschema import DTypeSchema
+from xarray_jsonschema import DTypeModel, ValidationError
+from xarray_jsonschema.model import DTypeLike
+
+from .strategies import supported_dtype_likes
 
 
 class TestDType:
-    @hp.given(dtype_like=xmst.supported_dtype_likes())
-    def test_dtype_schema_is_valid(self, dtype_like: DTypeLike) -> None:
-        """Should always produce a valid JSON Schema"""
-        schema = DTypeSchema(dtype_like)
-        assert schema.check_schema() is None
+    @hp.given(expected=supported_dtype_likes())
+    def test_generates_valid_schema(self, expected: DTypeLike) -> None:
+        """Should produce valid JSON Model."""
+        model = DTypeModel(expected)
+        assert DTypeModel.check_schema(model.to_schema()) is None
 
-    @hp.given(expected=xmst.supported_dtype_likes(), data=st.data())
-    def test_validation_passes(
-        self, expected: DTypeLike, data: st.DataObject
+    def test_default_value(self) -> None:
+        """Should produce a default schema if no attrs are provided."""
+        model = DTypeModel()
+        assert model.to_schema() == {
+            '$schema': 'https://json-schema.org/draft/2020-12/schema',
+            'const': 'float64',
+        }
+
+    @hp.given(expected=supported_dtype_likes())
+    def test_argument_is_not_kw_only(self, expected: DTypeLike) -> None:
+        assert DTypeModel(expected) == DTypeModel(dtype=expected)
+
+    @hp.given(expected=supported_dtype_likes())
+    def test_converter(self, expected: DTypeLike) -> None:
+        """Should convert attribute values"""
+        model = DTypeModel(expected)
+        assert model.dtype == str(np.dtype(expected))
+
+    @hp.given(expected=supported_dtype_likes())
+    def test_validation(self, expected: DTypeLike) -> None:
+        """Should pass if the dtype matches the expected dtype-like."""
+        actual = np.dtype(expected)
+        DTypeModel(expected).validate(actual)
+
+    @hp.given(expected=supported_dtype_likes(), actual=supported_dtype_likes())
+    def test_invalidation(
+        self, expected: DTypeLike, actual: DTypeLike
     ) -> None:
-        """Should pass if the instance matches a dtype-like."""
-        # TODO: How to handle xarray default 'U32' type for 'U0'
-        hp.assume(expected != '<U0')
-        print(expected)
-        instance = data.draw(xmst.data_arrays()).astype(expected)
-        DTypeSchema(expected).validate(instance)
+        """Should fail if the dtype does not match the expected dtype-like."""
+        actual = np.dtype(actual)
+        expected = np.dtype(expected)
 
-    @hp.given(data=st.data())
-    def test_validation_fails(self, data: st.DataObject) -> None:
-        """Should fail if the instance does not match a dtype-like."""
-        expected = data.draw(xmst.supported_dtype_likes())
-        instance = data.draw(xmst.data_arrays())
-        # # np.dtype(None) returns 'float64', but xrm.DimsSchema(None) is a wildcard...
-        hp.assume(np.dtype(expected) != instance.dtype)
+        hp.assume(actual != expected)
+
         with pt.raises(ValidationError):
-            DTypeSchema(expected).validate(instance)
+            DTypeModel(expected).validate(np.dtype(actual))

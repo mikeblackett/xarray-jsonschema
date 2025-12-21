@@ -9,9 +9,10 @@ from jsonschema import (
     TypeChecker,
     validators,
 )
+from jsonschema.exceptions import SchemaError, ValidationError
 from jsonschema.protocols import Validator
 
-__all__ = ['XarrayValidator']
+__all__ = ['XarrayValidator', 'SchemaError', 'ValidationError']
 
 
 def is_array_like(checker: TypeChecker, instance: Any):
@@ -21,7 +22,7 @@ def is_array_like(checker: TypeChecker, instance: Any):
     ) or isinstance(instance, tuple)
 
 
-XarrayValidator: Validator = validators.extend(
+XarrayValidator: type[Validator] = validators.extend(
     validator=Draft202012Validator,
     type_checker=Draft202012Validator.TYPE_CHECKER.redefine(
         'array', is_array_like
@@ -33,7 +34,4 @@ A custom JSON Schema validator for xarray objects.
 This validator extends the ``Draft202012Validator`` with the following features:
 
 - accepts the ``tuple`` type as an instance of the 'array' type
-- supports the custom ``requiredPatternProperties`` keyword, which validates
-  that the keys of an object contain at least one property matching a given
-  regular expression pattern.
 """

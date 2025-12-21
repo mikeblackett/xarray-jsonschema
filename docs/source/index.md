@@ -4,8 +4,6 @@ JSON Schema validation for [Xarray](https://xarray.dev/) objects.
 
 **Version:** {{version}}
 
-`xarray-jsonschema` is a re-implementation of [xarray-schema](https://xarray-schema.readthedocs.io/en/latest) that uses [JSON Schema](https://json-schema.org/) to validate [xarray](https://docs.xarray.dev/en/stable/) objects.
-
 :::{warning}
 This project is under active development. Frequent and breaking changes are expected.
 :::
@@ -32,17 +30,12 @@ api
 
 ## Overview
 
-`xarray-jsonschema`'s API is modelled after [xarray-schema](https://xarray-schema.readthedocs.io/en/latest/).
-
-> Xarray-schema provides a simple class-based API for defining schemas and validating Xarray objects (and their components).  
-> -- [xarray-schema documentation](https://xarray-schema.readthedocs.io/en/latest/quickstart.html)
-
-The main change is that the validation engine has been replaced with a [jsonschema](https://python-jsonschema.readthedocs.io/en/stable/) Python implementation of the [JSON Schema](https://json-schema.org/) specification.
+`xarray-jsonschema` provides a declarative API for defining [JSON Schema](https://json-schema.org/) and validating [xarray](https://xarray.dev/) objects.
 
 ## Features
 
-- Define schemas using Python classes;
-- Translate Python schemas to JSON Schemas;
+- Define models using Python classes;
+- Translate models to JSON Schemas;
 - Validate xarray objects with JSON Schema;
 
 ## Motivation
@@ -73,13 +66,14 @@ pip install -e .[dev]
 ```python
 import numpy as np
 import xarray as xr
-from xarray_jsonschema import DataArraySchema
+
+from xarray_jsonschema import DataArrayModel
 
 da = xr.DataArray(np.ones(4, dtype='i4'), dims=['x'], name='foo')
 
-schema = DataArraySchema(dtype=np.integer, name='foo', shape=(4, ), dims=['x'])
+model = DataArrayModel(dtype=np.int32, name='foo', shape=(4,), dims=['x'])
 
-schema.validate(da)
+model.validate(da)
 ```
 
 ## Contributing

@@ -21,10 +21,10 @@ class TestDataArrayModel:
         self, dtype, name, shape, dims, attrs
     ) -> None:
         """Should produce valid JSON Model."""
-        schema = DataArrayModel(
+        model = DataArrayModel(
             dtype=dtype, name=name, shape=shape, dims=dims, attrs=attrs
         )
-        assert schema.check_schema() is None
+        assert DataArrayModel.check_schema(model.to_schema()) is None
 
     def test_validation_with_default_parameters(self):
         """Should validate any data array when instantiated with default values."""

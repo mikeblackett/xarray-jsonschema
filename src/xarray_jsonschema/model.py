@@ -84,15 +84,15 @@ class Model(ABC, Generic[TObj]):
     def _validate(self, instance: Any) -> None:
         return self.validator.validate(instance=instance)
 
+    def to_schema(self) -> Mapping[str, object]:
+        """Return the JSON schema for this model."""
+        return self._builder.to_schema()
+
     def to_dict(self) -> dict[str, object]:
         """Return this model as a dictionary."""
         return at.asdict(
             self, filter=filter, value_serializer=value_serializer
         )
-
-    def to_schema(self) -> Mapping[str, object]:
-        """Return the JSON schema for this model."""
-        return self._builder.to_schema()
 
     def to_json(self, *args, **kwargs) -> str:
         """Return the JSON schema for this model as a string."""

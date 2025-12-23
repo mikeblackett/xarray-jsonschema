@@ -1,6 +1,6 @@
 # {{project}}
 
-JSON Schema validation for [Xarray](https://xarray.dev/) objects.
+[JSON Schema](https://json-schema.org/) validation for [Xarray](https://xarray.dev/) objects.
 
 **Version:** {{version}}
 
@@ -14,7 +14,6 @@ This project is under active development. Frequent and breaking changes are expe
 :maxdepth: 1
 
 user_guide
-examples/index
 api
 :::
 

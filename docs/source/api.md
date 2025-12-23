@@ -4,13 +4,13 @@
 ..  currentmodule:: xarray_jsonschema
 ```
 
-## Base Schema
+## Base Model
 
 ```{eval-rst}
 ..  autosummary::
     :toctree: generated/
 
-    XarraySchema
+    Model
 ```
 
 ### Attributes
@@ -19,8 +19,7 @@
 ..  autosummary::
     :toctree: generated/
 
-    XarraySchema.json
-    XarraySchema.validator
+    Model.validator
 ```
 
 ### Methods
@@ -29,26 +28,27 @@
 ..  autosummary::
     :toctree: generated/
 
-    XarraySchema.check_schema
-    XarraySchema.dumps
-    XarraySchema.validate
+    Model.build
+    Model.validate
+    Model.to_schema
+    Model.to_dict
+    Model.to_json
+    Model.check_schema
 ```
 
-## Schemas
+## Models
 
 ```{eval-rst}
 ..  autosummary::
     :toctree: generated/
 
-    AttrSchema
-    AttrsSchema
-    CoordsSchema
-    DataArraySchema
-    DatasetSchema
-    DataVarsSchema
-    DimsSchema
-    DTypeSchema
-    NameSchema
-    ShapeSchema
-    SizeSchema
+    DataArrayModel
+    DatasetModel
+    CoordsModel
+    DataVarsModel
+    AttrsModel
+    DimsModel
+    DTypeModel
+    NameModel
+    ShapeModel
 ```

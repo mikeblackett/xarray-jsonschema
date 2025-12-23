@@ -5,11 +5,11 @@ JSON Schema validation for Xarray objects.
 > [!WARNING]  
 > This package is in an early stage of development. Frequent and breaking changes are expected.
 
-`xarray-jsonschema` is a re-implementation of the [xarray-schema](https://xarray-schema.readthedocs.io/en/latest) API that uses [JSON Schema](https://json-schema.org/) for validation.
+`xarray-jsonschema` is a [JSON Schema](https://json-schema.org/)-powered validation library for [xarray](https://xarray.dev/) objects.
 
 ## Motivation
 
-I needed to validate xarray objects produced in an ETL pipeline, but none of the existing tools had all the features that I required. I took inspiration from the [xarray-schema](https://github.com/xarray-contrib/xarray-schema) and [xarray-validate](https://github.com/leroyvn/xarray-validate) packages and created `xarray-jsonschema`.
+I needed to validate xarray objects produced in an ETL pipeline, but none of the existing tools had all the features that I required. I took inspiration from the [xarray-schema](https://github.com/xarray-contrib/xarray-schema) package and created `xarray-jsonschema`.
 
 ## Installation
 

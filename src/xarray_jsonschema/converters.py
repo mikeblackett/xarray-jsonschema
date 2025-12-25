@@ -1,3 +1,5 @@
+"""This module provides custom `attrs` field converters"""
+
 from typing import Callable
 
 import numpy as np
@@ -5,12 +7,9 @@ import numpy.typing as npt
 
 
 def optional_type(converter: type) -> Callable:
-    """Optionally apply a converter to the value.
+    """Optionally apply a type converter to the value.
 
-    If the object is None or already an instance of the converter, it is returned as-is.
-    Otherwise, the converter is applied to the object and the result is returned.
-
-    This is only needed for optional Model instance
+    If the `converter` can accept instances of `type`, this method is not needed. You can just use `attrs.converter.optional()`.
     """
 
     def optional_converter(obj):
@@ -24,6 +23,6 @@ def optional_type(converter: type) -> Callable:
 def dtype(obj: npt.DTypeLike) -> str:
     """Return the canonical string representation of a numpy dtype.
 
-    This representation matches how xarray serializes dtypes in `to_dict(data=False)`
+    The returned string matches how xarray serializes dtypes with `to_dict(data=False)`
     """
     return str(np.dtype(obj))

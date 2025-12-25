@@ -1,8 +1,4 @@
-"""
-A custom JSON Schema validator for xarray-jsonschema.
-"""
-
-from typing import Any
+"""This module provides a custom JSON Schema validator for xarray-jsonschema."""
 
 from jsonschema import (
     Draft202012Validator,
@@ -15,7 +11,7 @@ from jsonschema.protocols import Validator
 __all__ = ['XarrayValidator', 'SchemaError', 'ValidationError']
 
 
-def is_array_like(checker: TypeChecker, instance: Any):
+def is_array_like(checker: TypeChecker, instance: object):
     """Check if an instance is an array-like object."""
     return Draft202012Validator.TYPE_CHECKER.is_type(
         instance, 'array'
@@ -28,10 +24,9 @@ XarrayValidator: type[Validator] = validators.extend(
         'array', is_array_like
     ),
 )
-"""
-A custom JSON Schema validator for xarray objects.
+"""A custom JSON Schema validator for xarray objects.
 
 This validator extends the ``Draft202012Validator`` with the following features:
 
-- accepts the ``tuple`` type as an instance of the 'array' type
+- interprets the ``tuple`` Python type as a valid instance of the 'array' data type
 """

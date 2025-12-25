@@ -1,5 +1,3 @@
-# TODO: (mike) Custom error messages
-
 from xarray_jsonschema._version import version as __version__
 from xarray_jsonschema.model import (
     AttrsModel,
@@ -14,6 +12,8 @@ from xarray_jsonschema.model import (
     ShapeModel,
 )
 from xarray_jsonschema.validator import SchemaError, ValidationError
+
+# TODO: (mike) Custom error messages
 
 __all__ = [
     '__version__',

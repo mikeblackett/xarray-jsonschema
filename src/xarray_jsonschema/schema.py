@@ -43,6 +43,11 @@ __all__ = ['SchemaBuilder']
 
 
 class Tuple(st.SchemaStrategy):
+    """A strategy for tuple-style array schemas.
+
+    See https://json-schema.org/understanding-json-schema/reference/array#tupleValidation
+    """
+
     KEYWORDS = (
         *st.SchemaStrategy.KEYWORDS,
         'prefixItems',
@@ -93,6 +98,8 @@ class Tuple(st.SchemaStrategy):
 
 
 class Pattern(st.String):
+    """A strategy for regular expression pattern string schemas."""
+
     KEYWORDS = (*st.String.KEYWORDS, 'pattern')
     PYTHON_TYPE = re.Pattern
 
@@ -123,6 +130,8 @@ class Pattern(st.String):
 
 
 class Const(st.SchemaStrategy):
+    """A strategy for const schemas."""
+
     KEYWORDS = ('const',)
     PYTHON_TYPE = (str, int, float, bool)
 
@@ -153,6 +162,8 @@ class Const(st.SchemaStrategy):
 
 
 class _Type(st.TypedSchemaStrategy):
+    """A base schema strategy for Python types."""
+
     JS_TYPE: str
     PYTHON_TYPE: type | tuple[type, ...]
 
@@ -171,31 +182,43 @@ class _Type(st.TypedSchemaStrategy):
 
 
 class String(_Type):
+    """A strategy for string schemas."""
+
     JS_TYPE = 'string'
     PYTHON_TYPE = (str,)
 
 
 class Array(_Type):
+    """A strategy for array schemas."""
+
     JS_TYPE = 'array'
     PYTHON_TYPE = (tuple, list, set)
 
 
 class Boolean(_Type):
+    """A strategy for boolean schemas."""
+
     JS_TYPE = 'boolean'
     PYTHON_TYPE = (bool,)
 
 
 class Integer(_Type):
+    """A strategy for integer schemas."""
+
     JS_TYPE = 'integer'
     PYTHON_TYPE = (int,)
 
 
 class Number(_Type):
+    """A strategy for number schemas."""
+
     JS_TYPE = 'number'
     PYTHON_TYPE = (float,)
 
 
 class Wildcard(st.SchemaStrategy):
+    """A strategy for wildcard schemas."""
+
     PYTHON_TYPE = (...,)
 
     @classmethod

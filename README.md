@@ -21,13 +21,11 @@ You can install it from source:
 pip install git+https://github.com/mikeblackett/xarray-jsonschema
 ```
 
-Or for development:
+Or for development, using [uv](https://docs.astral.sh/uv/):
 
 ```bash
-mkdir xarray-jsonschema
-cd xarray-jsonschema
 git clone https://github.com/mikeblackett/xarray-jsonschema
-pip install -e .[dev]
+uv sync --dev
 ```
 
 ## Contributing

@@ -38,6 +38,7 @@ from collections.abc import Mapping
 
 import genson as gs
 import genson.schema.strategies as st
+import numpy as np
 
 __all__ = ['SchemaBuilder']
 
@@ -133,7 +134,7 @@ class Const(st.SchemaStrategy):
     """A strategy for const schemas."""
 
     KEYWORDS = ('const',)
-    PYTHON_TYPE = (str, int, float, bool)
+    PYTHON_TYPE = (str, int, float, bool, np.dtype)
 
     @classmethod
     def match_schema(cls, schema: Mapping) -> bool:
@@ -151,8 +152,9 @@ class Const(st.SchemaStrategy):
         super().add_schema(schema)
         self.const = schema.get('const', self.const)
 
-    def add_object(self, obj: str | int | float | bool) -> None:
+    def add_object(self, obj: str | int | float | bool | np.dtype) -> None:
         super().add_object(obj)
+        obj = str(obj) if isinstance(obj, np.dtype) else obj
         self.const = obj
 
     def to_schema(self) -> dict:

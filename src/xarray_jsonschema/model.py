@@ -213,22 +213,23 @@ class DTypeModel(Model[np.dtype]):
     ----------
     dtype : DTypeLike | None
         The expected dtype value. Must be coercible by `numpy.dtype()`.
+        Passing `None` will produce the default numpy dtype (float64).
 
     Attributes
     ----------
-    dtype : str
-        The string representation of the model's dtype.
+    dtype : np.dtype
+        The expected numpy dtype.
     """
 
     dtype: DTypeLike | None = at.field(
-        default=None, converter=converters.dtype, kw_only=False
+        default=None, converter=np.dtype, kw_only=False
     )
 
     def build(self) -> None:
         return self._builder.add_object(self.dtype)
 
     def validate(self, obj: np.dtype) -> None:
-        return super().validate(obj)
+        return super()._validate(str(obj))
 
 
 @at.define(kw_only=True, frozen=True)

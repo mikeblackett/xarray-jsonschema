@@ -2,9 +2,6 @@
 
 from typing import Callable
 
-import numpy as np
-import numpy.typing as npt
-
 
 def optional_type(converter: type) -> Callable:
     """Optionally apply a type converter to the value.
@@ -18,11 +15,3 @@ def optional_type(converter: type) -> Callable:
         return converter(obj)
 
     return optional_converter
-
-
-def dtype(obj: npt.DTypeLike) -> str:
-    """Return the canonical string representation of a numpy dtype.
-
-    The returned string matches how xarray serializes dtypes with `to_dict(data=False)`
-    """
-    return str(np.dtype(obj))

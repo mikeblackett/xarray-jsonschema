@@ -28,10 +28,30 @@ git clone https://github.com/mikeblackett/xarray-jsonschema
 uv sync --dev
 ```
 
+## Quick start
+
+```python
+import numpy as np
+import xarray as xr
+from xarray_jsonschema import DataArrayModel
+
+da = xr.DataArray(
+    np.random.random(10),
+    dims=['x'],
+    name='foo',
+)
+model = DataArrayModel(
+    dtype='float64',
+    dims=['x'],
+    name='foo',
+)
+model.validate(da)
+```
+
 ## Contributing
 
 Contributions are encouraged! Please feel free to submit a Pull Request.
 
 ## Next steps
 
-Check out the [Docs]((https://xarray-jsonschema.readthedocs.io/en/latest/).)
+Check out the [docs](https://xarray-jsonschema.readthedocs.io/en/latest/).

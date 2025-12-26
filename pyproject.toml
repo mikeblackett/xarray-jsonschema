@@ -28,7 +28,6 @@ dev = [
 ]
 docs = [
     "myst-nb",
-    "myst-parser",
     "sphinx",
     "sphinx-copybutton",
     "sphinx-rtd-theme",

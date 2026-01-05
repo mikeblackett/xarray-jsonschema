@@ -1,9 +1,9 @@
 # xarray-jsonschema
 
-JSON Schema validation for Xarray objects.
-
 > [!WARNING]  
-> This package is in an early stage of development. Frequent and breaking changes are expected.
+> This package is no longer being developed. Take a look at [xarray-specs](https://github.com/mikeblackett/xarray-specs) as an alternative.
+
+JSON Schema validation for Xarray objects.
 
 `xarray-jsonschema` is a [JSON Schema](https://json-schema.org/)-powered validation library for [xarray](https://xarray.dev/) objects.
 
